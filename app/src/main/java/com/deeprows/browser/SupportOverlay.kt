@@ -42,8 +42,8 @@ class SupportOverlay(
     companion object {
 
         const val AD_URL =
-            "https://www.profitableratecpmnetwork.com/u4daewx9a4" +
-                "?key=8d452a709348753119f317d5d524b3c4"
+            "https://www.profitableratecpmnetwork.com/iqv44jk21" +
+                "?key=c2752cc0c9c553ac66e4fb16cdb95f60"
 
         // Delay after the app has loaded before the card appears.
         const val SHOW_DELAY_MS = 60_000L
