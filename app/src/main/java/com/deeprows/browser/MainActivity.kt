@@ -4107,5 +4107,3 @@ class MainActivity : AppCompatActivity() {
                 // Keep the existing icon if logo fails
             }
         }
-
-Preview truncated for large file
