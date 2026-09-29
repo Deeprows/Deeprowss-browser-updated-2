@@ -10,6 +10,8 @@ import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
 import android.view.ViewGroup
+import android.webkit.WebResourceError
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
@@ -52,6 +54,10 @@ class SupportOverlay(
         // The support window closes itself after this many seconds.
         const val AD_WINDOW_SECONDS = 7
 
+        // If the support page has not finished loading after this long,
+        // the countdown starts anyway so the window can never get stuck.
+        const val LOAD_TIMEOUT_MS = 20_000L
+
         private const val PREFS = "deeprows_browser"
         private const val KEY_LAST_SHOWN = "support_overlay_last_shown"
 
@@ -73,6 +79,8 @@ class SupportOverlay(
     private var overlay: FrameLayout? = null
     private var adWindow: FrameLayout? = null
     private var adWebView: WebView? = null
+    private var countdownLabel: TextView? = null
+    private var countdownStarted = false
 
     fun isActive(): Boolean = overlay != null || adWindow != null
 
@@ -389,7 +397,7 @@ class SupportOverlay(
         }
 
         val label = TextView(activity).apply {
-            text = "Thank you for your support \u2022 closing in $AD_WINDOW_SECONDS s"
+            text = "Loading\u2026 please wait"
             textSize = 13f
             setTextColor(Color.WHITE)
         }
@@ -406,7 +414,29 @@ class SupportOverlay(
         val web = WebView(activity).apply {
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
-            webViewClient = WebViewClient()
+            webViewClient = object : WebViewClient() {
+
+                override fun onPageFinished(view: WebView?, url: String?) {
+                    super.onPageFinished(view, url)
+                    // Ignore the blank page used when the window closes.
+                    if (url != null && url != "about:blank") {
+                        startCountdown()
+                    }
+                }
+
+                override fun onReceivedError(
+                    view: WebView?,
+                    request: WebResourceRequest?,
+                    error: WebResourceError?
+                ) {
+                    super.onReceivedError(view, request, error)
+                    // If the main page fails, start the countdown anyway so
+                    // the window can never get stuck (it has no close button).
+                    if (request?.isForMainFrame == true) {
+                        startCountdown()
+                    }
+                }
+            }
             loadUrl(AD_URL)
         }
 
@@ -442,7 +472,25 @@ class SupportOverlay(
 
         onStateChanged()
 
+        countdownStarted = false
+        countdownLabel = label
+
+        // Safety net: if the page never finishes loading, begin the
+        // countdown after LOAD_TIMEOUT_MS so the window still closes.
+        handler.postDelayed({ startCountdown() }, LOAD_TIMEOUT_MS)
+    }
+
+    // Starts the closing countdown. Runs only once, and only after the
+    // support URL has fully loaded (or the load timeout is reached).
+    private fun startCountdown() {
+
+        if (countdownStarted || adWindow == null) return
+        countdownStarted = true
+
+        val label = countdownLabel ?: return
         var secondsLeft = AD_WINDOW_SECONDS
+
+        label.text = "Thank you for your support \u2022 closing in $secondsLeft s"
 
         val tick = object : Runnable {
             override fun run() {
@@ -472,6 +520,8 @@ class SupportOverlay(
         }
 
         adWebView = null
+        countdownLabel = null
+        countdownStarted = false
 
         adWindow?.let { (it.parent as? ViewGroup)?.removeView(it) }
 
