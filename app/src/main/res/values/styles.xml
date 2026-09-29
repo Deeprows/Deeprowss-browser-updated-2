@@ -10,4 +10,12 @@
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowLightNavigationBar">true</item>
     </style>
+
+    <!-- Launch splash: Deeprowss logo on a dark background -->
+    <style name="Theme.DeeprowsBrowser.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#101116</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_logo</item>
+        <item name="windowSplashScreenAnimationDuration">600</item>
+        <item name="postSplashScreenTheme">@style/Theme.DeeprowsBrowser</item>
+    </style>
 </resources>
