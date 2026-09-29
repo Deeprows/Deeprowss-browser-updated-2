@@ -25,7 +25,8 @@ import android.widget.TextView
 // - Shown at most once every 24 hours.
 // - "Click Here" opens the support link in an in-app window that
 //   closes by itself after AD_WINDOW_SECONDS seconds.
-// - Users can always close the card with the X button (or Back).
+// - There is no close button, and the Back button is ignored while
+//   the card or the support window is showing.
 //
 // The timing and link can be changed in the constants below.
 //
@@ -75,20 +76,10 @@ class SupportOverlay(
 
     fun isActive(): Boolean = overlay != null || adWindow != null
 
-    // Returns true when Back was used to close the overlay.
-    fun handleBack(): Boolean {
-        return when {
-            adWindow != null -> {
-                closeAdWindow()
-                true
-            }
-            overlay != null -> {
-                dismiss()
-                true
-            }
-            else -> false
-        }
-    }
+    // Called when the phone's Back button is pressed. While the card
+    // or the support window is showing, Back is consumed (returns true)
+    // but closes nothing.
+    fun handleBack(): Boolean = overlay != null || adWindow != null
 
     private fun dp(value: Int): Int =
         (value * activity.resources.displayMetrics.density).toInt()
@@ -344,31 +335,6 @@ class SupportOverlay(
             )
         )
 
-        // Close button (top right)
-        val close = TextView(activity).apply {
-            text = "\u2715"
-            textSize = 16f
-            setTextColor(Color.WHITE)
-            gravity = Gravity.CENTER
-            background = GradientDrawable().apply {
-                shape = GradientDrawable.OVAL
-                setColor(Color.parseColor("#33FFFFFF"))
-            }
-            contentDescription = "Close"
-            isClickable = true
-            isFocusable = true
-            setOnClickListener { dismiss() }
-        }
-
-        layer.addView(
-            close,
-            FrameLayout.LayoutParams(
-                dp(40),
-                dp(40),
-                Gravity.TOP or Gravity.END
-            ).apply { setMargins(0, dp(16), dp(16), 0) }
-        )
-
         root.addView(
             layer,
             FrameLayout.LayoutParams(
@@ -419,23 +385,13 @@ class SupportOverlay(
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             setBackgroundColor(Color.parseColor("#101827"))
-            setPadding(dp(16), dp(10), dp(8), dp(10))
+            setPadding(dp(16), dp(10), dp(16), dp(10))
         }
 
         val label = TextView(activity).apply {
             text = "Thank you for your support \u2022 closing in $AD_WINDOW_SECONDS s"
             textSize = 13f
             setTextColor(Color.WHITE)
-        }
-
-        val closeButton = TextView(activity).apply {
-            text = "\u2715"
-            textSize = 16f
-            setTextColor(Color.WHITE)
-            gravity = Gravity.CENTER
-            isClickable = true
-            isFocusable = true
-            setOnClickListener { closeAdWindow() }
         }
 
         bar.addView(
@@ -446,8 +402,6 @@ class SupportOverlay(
                 1f
             )
         )
-
-        bar.addView(closeButton, LinearLayout.LayoutParams(dp(40), dp(32)))
 
         val web = WebView(activity).apply {
             settings.javaScriptEnabled = true
