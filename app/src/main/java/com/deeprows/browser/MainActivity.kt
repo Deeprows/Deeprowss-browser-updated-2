@@ -1636,7 +1636,7 @@ class MainActivity : AppCompatActivity() {
                 listOf(
 
                     HomeSubCategory(
-                        "🎬 AI VIDEO",
+                        "🎬 AI Video",
                         listOf(
                             HomeSite("Kling AI", "https://klingai.com/"),
                             HomeSite("Hailuo AI", "https://hailuoai.video/"),
@@ -1646,13 +1646,14 @@ class MainActivity : AppCompatActivity() {
                             HomeSite("PixVerse", "https://pixverse.ai/"),
                             HomeSite("Vidu", "https://www.vidu.com/"),
                             HomeSite("CapCut", "https://www.capcut.com/"),
+                            HomeSite("Theresa", "https://www.free.theresanaiforthat.com/"),
                             HomeSite("Canva", "https://www.canva.com/"),
                             HomeSite("Krea", "https://www.krea.ai/")
                         )
                     ),
 
                     HomeSubCategory(
-                        "🖼️ AI IMAGE",
+                        "🖼️ AI Image",
                         listOf(
                             HomeSite("Microsoft Designer", "https://designer.microsoft.com/"),
                             HomeSite("Leonardo AI", "https://leonardo.ai/"),
@@ -1662,13 +1663,14 @@ class MainActivity : AppCompatActivity() {
                             HomeSite("Canva AI", "https://www.canva.com/ai-image-generator/"),
                             HomeSite("Playground AI", "https://playground.com/"),
                             HomeSite("Krea AI", "https://www.krea.ai/"),
+                            HomeSite("Theresa AI", "https://www.free.theresanaiforthat.com/"),
                             HomeSite("Freepik AI", "https://www.freepik.com/ai/image-generator"),
                             HomeSite("Craiyon", "https://www.craiyon.com/")
                         )
                     ),
 
                     HomeSubCategory(
-                        "🎵 AI AUDIO / MUSIC / VOICE",
+                        "🎵 AI Audio / Music / Voice",
                         listOf(
                             HomeSite("ElevenLabs", "https://elevenlabs.io/"),
                             HomeSite("Suno", "https://suno.com/"),
@@ -1690,19 +1692,20 @@ class MainActivity : AppCompatActivity() {
                 listOf(
 
                     HomeSubCategory(
-                        "📚 FREE ONLINE COURSES",
+                        "📚 Free Online Courses",
                         listOf(
                             HomeSite("MIT OpenCourseWare", "https://ocw.mit.edu/"),
                             HomeSite("OpenLearn", "https://www.open.edu/openlearn/"),
                             HomeSite("edX", "https://www.edx.org/"),
                             HomeSite("Coursera", "https://www.coursera.org/"),
                             HomeSite("Open Yale Courses", "https://oyc.yale.edu/"),
+                            HomeSite("WeLib", "https://welib.st/"),
                             HomeSite("NPTEL", "https://nptel.ac.in/")
                         )
                     ),
 
                     HomeSubCategory(
-                        "🎓 SCHOLARSHIPS & SPONSORSHIPS",
+                        "🎓 Scholarships & Sponsorships",
                         listOf(
                             HomeSite("Chevening", "https://www.chevening.org/"),
                             HomeSite("Erasmus+", "https://erasmus-plus.ec.europa.eu/"),
@@ -1733,6 +1736,14 @@ class MainActivity : AppCompatActivity() {
                             HomeSite("Jooble", "https://jooble.org/"),
                             HomeSite("Monster", "https://www.monster.com/"),
                             HomeSite("JobStreet", "https://www.jobstreet.com/"),
+                            HomeSite("moovijob", "https://www.moovijob.com/"),
+                            HomeSite("visasponsor", "https://www.visasponsor.jobs/"),
+                            HomeSite("WeAreDevelopers", "wearedevelopers.com/"),
+                            HomeSite("Xing", "xing.com/"),
+                            HomeSite("Hays", "hays.com/"),
+                            HomeSite("Adecco", "adecco.com/"),
+                            HomeSite("Randstad", "randstad.com/"),
+                            HomeSite("RelocateMe", "relocate.me/"),
                             HomeSite("Wellfound", "https://wellfound.com/jobs")
                         )
                     )
@@ -1744,9 +1755,9 @@ class MainActivity : AppCompatActivity() {
                 listOf(
 
                     HomeSubCategory(
-                        "🎥 MOVIE",
+                        "🎥 MOvie",
                         listOf(
-                            HomeSite("Deeprowss Movies", "https://deeprowss.com/"),
+                            HomeSite("Deeprowss Movies", "https://deeprowss.com/#movies=dhamaal-2026/"),
                             HomeSite("Netflix", "https://www.netflix.com/"),
                             HomeSite("TMDB", "https://www.themoviedb.org/"),
                             HomeSite("IMDb", "https://www.imdb.com/")
@@ -1754,7 +1765,7 @@ class MainActivity : AppCompatActivity() {
                     ),
 
                     HomeSubCategory(
-                        "🎌 ANIME",
+                        "🎌 Anime",
                         listOf(
                             HomeSite("Miruro", "https://www.miruro.tv/"),
                             HomeSite("AnimePahe", "https://animepahe.ru/"),
@@ -1763,7 +1774,7 @@ class MainActivity : AppCompatActivity() {
                     ),
 
                     HomeSubCategory(
-                        "🎨 CARTOONS",
+                        "🎨 Cartoons",
                         listOf(
                             HomeSite("WatchCartoonOnline", "https://www.wco.tv/"),
                             HomeSite("SuperCartoons", "https://www.supercartoons.net/"),
@@ -1772,7 +1783,7 @@ class MainActivity : AppCompatActivity() {
                     ),
 
                     HomeSubCategory(
-                        "🇰🇷 ASIAN / K-DRAMA",
+                        "🇰🇷 Asian / K-Drama",
                         listOf(
                             HomeSite("AsianCrush", "https://www.asiancrush.com/"),
                             HomeSite("OnDemandChina", "https://www.ondemandchina.com/"),
@@ -1781,7 +1792,7 @@ class MainActivity : AppCompatActivity() {
                     ),
 
                     HomeSubCategory(
-                        "🎞️ CLASSICS",
+                        "🎞️ Classics",
                         listOf(
                             HomeSite("Internet Archive", "https://archive.org/"),
                             HomeSite("WikiFlix", "https://wikiflix.toolforge.org/"),
@@ -1812,7 +1823,7 @@ class MainActivity : AppCompatActivity() {
                     ),
 
                     HomeSubCategory(
-                        "📼 LIVE FOOTBALL & REPLAYS",
+                        "📼 Live Football & Replays",
                         listOf(
                             HomeSite("Deeprowss Sports", "https://deeprowss.com"),
                             HomeSite("Footballia", "https://footballia.online/"),
@@ -1866,7 +1877,7 @@ class MainActivity : AppCompatActivity() {
                 listOf(
 
                     HomeSubCategory(
-                        "🛠️ IPTV TOOLS",
+                        "🛠️ IPTV Tools",
                         listOf(
                             HomeSite("Awesome IPTV", "https://github.com/iptv-org/awesome-iptv"),
                             HomeSite("IPTV Playlists", "https://iptv-org.github.io/"),
@@ -1877,12 +1888,13 @@ class MainActivity : AppCompatActivity() {
                     ),
 
                     HomeSubCategory(
-                        "▶️ IPTV PLAYERS",
+                        "▶️ IPTV Players",
                         listOf(
                             HomeSite("IPTVnator", "https://github.com/4gray/iptvnator"),
                             HomeSite("ynoTV", "https://ynotv.com/"),
                             HomeSite("Open TV", "https://opentv.app/"),
                             HomeSite("LivePush", "https://livepush.io/"),
+                            HomeSite("Famelack", "https://famelack.com/"),
                             HomeSite("Jellyfin", "https://jellyfin.org/")
                         )
                     )
@@ -1916,6 +1928,7 @@ class MainActivity : AppCompatActivity() {
                             HomeSite("YouTube", "https://www.youtube.com/"),
                             HomeSite("X", "https://x.com/"),
                             HomeSite("Dailymotion", "https://www.dailymotion.com/"),
+                            HomeSite("Discord", "https://discord.com/"),
                             HomeSite("Nairaland", "https://www.nairaland.com/")
                         )
                     )
