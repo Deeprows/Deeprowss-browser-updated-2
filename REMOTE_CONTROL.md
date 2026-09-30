@@ -58,3 +58,10 @@ Put entries in `customVideos` in `remote/config.json`. Users see them next time 
 - In the app, drag down on the home page to re-download config.json and rebuild the page.
 - Custom videos from other hosts (Filemoon, Vimeo...) open in the in-app player directly; if a host refuses to play
   inside a WebView, the player shows an "Open in browser" link.
+
+## Custom video `type` and landscape playback
+- Add `"type": "sport"` or `"type": "movie"` to any entry in `customVideos`. If the video has no thumbnail
+  (none in config.json and none provided by the player page), the card shows a green SPORT or a red/purple MOVIE
+  picture instead of a blank card. Without a `type` a neutral play-button picture is used.
+- Every video whose `category` is `deeprows` opens full screen in landscape; the phone returns to its normal
+  orientation when the video is closed.
