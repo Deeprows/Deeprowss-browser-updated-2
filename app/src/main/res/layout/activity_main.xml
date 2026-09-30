@@ -17,10 +17,15 @@
         android:progress="0"
         android:visibility="gone" />
 
-    <FrameLayout
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefresh"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
         <ScrollView
             android:id="@+id/homePage"
@@ -817,6 +822,8 @@
         </ScrollView>
 
     </FrameLayout>
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <!-- BOTTOM NAVIGATION -->
 
