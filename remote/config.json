@@ -9,8 +9,8 @@
     "url": ""
   },
   "update": {
-    "latestVersionCode": 3,
-    "latestVersionName": "0.3.0",
+    "latestVersionCode": 1,
+    "latestVersionName": "0.1.0",
     "minVersionCode": 1,
     "apkUrl": "https://github.com/Deeprows/Deeprowss-browser-updated-2/releases/latest",
     "changelog": ""
@@ -285,13 +285,15 @@
       "title": "Atletico Madrid vs Real Madrid Highlights",
       "url": "https://filemoon.org/en/k0embMk9GVb4/embed",
       "category": "deeprows",
+      "type": "sport",
       "channel": "Deeprows"
     },
     {
       "title": "Movie: Disclosure Day (2026)",
       "url": "https://filemoon.org/en/Z9dzB7EMGk1b/embed",
-      "channel": "Deeprows",
-      "category": "deeprows"
+      "category": "deeprows",
+      "type": "movie",
+      "channel": "Deeprows"
     }
   ]
 }
