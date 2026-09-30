@@ -24,7 +24,9 @@ data class VideoItem(
     val published: String,
     val category: String = "general",
     /** Set only for your own non-YouTube videos (Vimeo embed, .mp4 link, etc). */
-    val customUrl: String? = null
+    val customUrl: String? = null,
+    /** "sport" or "movie" (from config.json). Picks the fallback card picture. */
+    val type: String = ""
 ) {
     val isYouTube: Boolean get() = customUrl == null
 
