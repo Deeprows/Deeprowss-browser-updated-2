@@ -5,6 +5,10 @@ on:
   push:
     branches:
       - main
+    # Editing the remote config must not trigger an APK build.
+    paths-ignore:
+      - 'remote/**'
+      - '**.md'
 
 jobs:
   build:
