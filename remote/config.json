@@ -17,8 +17,13 @@
   },
   "newsFeeds": [
     "https://feeds.bbci.co.uk/news/rss.xml",
+    "https://feeds.bbci.co.uk/news/world/africa/rss.xml",
     "https://www.aljazeera.com/xml/rss/all.xml",
-    "https://www.theguardian.com/world/rss"
+    "https://www.theguardian.com/world/rss",
+    "https://rss.dw.com/xml/rss-en-all",
+    "https://www.france24.com/en/rss",
+    "https://feeds.npr.org/1001/rss.xml",
+    "https://feeds.skynews.com/feeds/rss/world.xml"
   ],
   "videoChannels": [
     {
@@ -264,7 +269,11 @@
   ],
   "sportFeeds": [
     "https://feeds.bbci.co.uk/sport/rss.xml",
-    "https://www.espn.com/espn/rss/news"
+    "https://feeds.bbci.co.uk/sport/football/rss.xml",
+    "https://www.espn.com/espn/rss/news",
+    "https://www.skysports.com/rss/12040",
+    "https://www.theguardian.com/football/rss",
+    "https://www.cbssports.com/rss/headlines/"
   ],
   "reels": {
     "enabled": true,
