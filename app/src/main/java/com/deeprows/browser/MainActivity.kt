@@ -1650,7 +1650,7 @@ class MainActivity : AppCompatActivity() {
                             HomeSite("PixVerse", "https://pixverse.ai/"),
                             HomeSite("Vidu", "https://www.vidu.com/"),
                             HomeSite("CapCut", "https://www.capcut.com/"),
-                            HomeSite("Theresa", "https://www.free.theresanaiforthat.com/"),
+                            HomeSite("Theresa", "https://www.theresanaiforthat.com/"),
                             HomeSite("Canva", "https://www.canva.com/"),
                             HomeSite("Krea", "https://www.krea.ai/")
                         )
@@ -1667,7 +1667,7 @@ class MainActivity : AppCompatActivity() {
                             HomeSite("Canva AI", "https://www.canva.com/ai-image-generator/"),
                             HomeSite("Playground AI", "https://playground.com/"),
                             HomeSite("Krea AI", "https://www.krea.ai/"),
-                            HomeSite("Theresa AI", "https://www.free.theresanaiforthat.com/"),
+                            HomeSite("Theresa AI", "https://www.theresanaiforthat.com/"),
                             HomeSite("Freepik AI", "https://www.freepik.com/ai/image-generator"),
                             HomeSite("Craiyon", "https://www.craiyon.com/")
                         )
