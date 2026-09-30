@@ -1,46 +1,106 @@
 {
-  "vpn": { "message": "VPN is coming soon" },
-  "announcement": {
-    "id": "welcome-1",
-    "title": "Welcome",
-    "message": "Thanks for using Deeprows Browser!",
-    "url": ""
+"vpn": {
+"message": "VPN is coming soon"
+},
+"announcement": {
+"id": "welcome-1",
+"title": "Welcome",
+"message": "Thanks for using Deeprows Browser!",
+"url": ""
+},
+"update": {
+"latestVersionCode": 1,
+"latestVersionName": "0.1.0",
+"minVersionCode": 1,
+"apkUrl": "https://github.com/Deeprows/Deeprowss-browser-updated-2/releases/latest",
+"changelog": ""
+},
+"newsFeeds": [
+"https://feeds.bbci.co.uk/news/rss.xml",
+"https://www.aljazeera.com/xml/rss/all.xml",
+"https://www.theguardian.com/world/rss"
+],
+"videoChannels": [
+{ "name": "ESPN", "id": "UCiWLfSweyRNmLpgEHekhoAg", "category": "sports" },
+{ "name": "NBA", "id": "UCWJ2lWNubArHWmf3FIHbfcQ", "category": "sports" },
+{ "name": "Sky Sports Football", "id": "UCNAf1k0yIjyGu3k9BwAg3lg", "category": "sports" },
+{ "name": "Red Bull", "id": "UCblfuW_4rakIf2h6aqANefA", "category": "sports" },
+
+```
+{ "name": "NFL", "id": "UCDVYQ4Zhbm3S2dlz7P1GBDg", "category": "sports" },
+{ "name": "NHL", "id": "UCqFMzb-4AUf6WAIbl132QKA", "category": "sports" },
+{ "name": "UFC", "id": "UCvgfXK4nTYKudb0rFR6noLA", "category": "sports" },
+{ "name": "WWE", "id": "UCJ5v_MCY6GNUBTO8-D3XoAg", "category": "sports" },
+
+{ "name": "Premier League", "id": "UCG5qGWdu8nIRZqJ_GgDwQ-w", "category": "sports" },
+{ "name": "FIFA", "id": "UCpcTrCXblq78GZrTUTLWeBw", "category": "sports" },
+{ "name": "UEFA", "id": "UCyGa1YEx9ST66rYrJTGIKOw", "category": "sports" },
+{ "name": "LaLiga", "id": "UCTv-XvfzLX3i4IGWAm4sbmA", "category": "sports" },
+{ "name": "Bundesliga", "id": "UC6UL29enLNe4mqwTfAyeNuw", "category": "sports" },
+{ "name": "Serie A", "id": "UCBJeMCIeLQos7wacox4hmLQ", "category": "sports" },
+{ "name": "Ligue 1", "id": "UC58LMAlfwtGRNR6Xpd4DlSA", "category": "sports" },
+{ "name": "Eredivisie", "id": "UCxyoiD-bwrmapdivXCFvmaw", "category": "sports" },
+{ "name": "Major League Soccer", "id": "UCSZbXT5TLLW_i-5W8FZpFsg", "category": "sports" },
+{ "name": "NWSL", "id": "UCL4xu08EDu0ZFZsBJUB0chw", "category": "sports" },
+
+{ "name": "ICC", "id": "UCt2JXOLNxqry7B_4rRZME3Q", "category": "sports" },
+{ "name": "FIBA", "id": "UCtInrnU3QbWqFGsdKT1GZtg", "category": "sports" },
+{ "name": "EuroLeague Basketball", "id": "UCGr3nR_XH9r6E5b09ZJAT9w", "category": "sports" },
+
+{ "name": "ATP Tour", "id": "UCY_5h5zaSwN7Or4kIJDYNXA", "category": "sports" },
+{ "name": "WTA", "id": "UCaBIVVpHjq6j3tSyxwTE-8Q", "category": "sports" },
+
+{ "name": "Formula 1", "id": "UCB_qr75-ydFVKSF9Dmo6izg", "category": "sports" },
+{ "name": "MotoGP", "id": "UC8pYaQzbBBXg9GIOHRvTmDQ", "category": "sports" },
+{ "name": "Formula E", "id": "UC-DuRqsBQOEk_5o1q4Ze-Fg", "category": "sports" },
+{ "name": "NASCAR", "id": "UCuN9hYw2RpoAW8rZ3VK3isA", "category": "sports" },
+
+{ "name": "Tour de France", "id": "UCSpycUnuU0IVF7gGIhGojhg", "category": "sports" },
+{ "name": "World Athletics", "id": "UCQk7fWv15ChjMJLCRVmtApw", "category": "sports" },
+{ "name": "World Surf League", "id": "UChuLeaTGRcfzo0UjL-2qSbQ", "category": "sports" },
+{ "name": "World Rugby", "id": "UCE28rwYoaV7jvU6GVzdu_GQ", "category": "sports" },
+{ "name": "World Aquatics", "id": "UCZko_COpTM4_d2kPrxZfzFg", "category": "sports" },
+{ "name": "World Triathlon", "id": "UCXRVKD6l-LrX5TmGJqQFFoQ", "category": "sports" },
+{ "name": "UCI", "id": "UCloqTh1nPpW13LCntQglS-Q", "category": "sports" },
+{ "name": "Olympics", "id": "UCTl3QQTvqHFjurroKxexy2Q", "category": "sports" },
+
+{ "name": "The Tonight Show", "id": "UC8-Th83bH_thdKZDJCrn88g", "category": "comedy" },
+{ "name": "Saturday Night Live", "id": "UCqFzWxSCi39LnW1JKFR3efg", "category": "comedy" },
+{ "name": "Jimmy Kimmel Live", "id": "UCa6vGFO9ty8v5KZJXQxdhaw", "category": "comedy" },
+{ "name": "The Daily Show", "id": "UCwWhs_6x42TyRM4Wstoq8HA", "category": "comedy" },
+
+{ "name": "Tasty", "id": "UCJFp8uSYCjXOMnkUyb3CQ3Q", "category": "lifestyle" },
+{ "name": "BuzzFeed Video", "id": "UCpko_-a4wgz2u_DgDgd9fqA", "category": "lifestyle" },
+{ "name": "Good Mythical Morning", "id": "UC4PooiX37Pld1T8J5SYT-SQ", "category": "lifestyle" },
+
+{ "name": "Channels Television", "id": "UCEXGDNclvmg6RW0vipJYsTQ", "category": "gist" },
+{ "name": "BBC News", "id": "UC16niRr50-MSBwiO3YDb3RA", "category": "gist" },
+{ "name": "Sky News", "id": "UCoMdktPbSTixAyNGwb-UYkQ", "category": "gist" },
+{ "name": "Al Jazeera English", "id": "UCNye-wNBqNL5ZzHSJj3l8Bg", "category": "gist" },
+
+{ "name": "TED", "id": "UCAuUUnT6oDeKwE6v1NGQxug", "category": "learn" },
+{ "name": "NASA", "id": "UCLA_DiR1FfKNvjuUpBHmylQ", "category": "learn" }
+```
+
+],
+"sportFeeds": [
+"https://feeds.bbci.co.uk/sport/rss.xml",
+"https://www.espn.com/espn/rss/news"
+],
+"reels": {
+"enabled": true,
+"title": "Deeprows Reels",
+"shortsOnly": true
+},
+"customVideos": [
+  {
+    "title": "Atletico Madrid vs Real Madrid Highlights",
+    "url": "https://filemoon.org/en/k0embMk9GVb4/embed",
+    "category": "deeprows"
   },
-  "update": {
-    "latestVersionCode": 1,
-    "latestVersionName": "0.1.0",
-    "minVersionCode": 1,
-    "apkUrl": "https://github.com/Deeprows/Deeprowss-browser-updated-2/releases/latest",
-    "changelog": ""
-  },
-  "newsFeeds": [
-    "https://feeds.bbci.co.uk/news/rss.xml",
-    "https://www.aljazeera.com/xml/rss/all.xml",
-    "https://www.theguardian.com/world/rss"
-  ],
-  "videoChannels": [
-    { "name": "ESPN", "id": "UCiWLfSweyRNmLpgEHekhoAg", "category": "sports" },
-    { "name": "NBA", "id": "UCWJ2lWNubArHWmf3FIHbfcQ", "category": "sports" },
-    { "name": "Sky Sports Football", "id": "UCNAf1k0yIjyGu3k9BwAg3lg", "category": "sports" },
-    { "name": "Red Bull", "id": "UCblfuW_4rakIf2h6aqANefA", "category": "sports" },
-    { "name": "The Tonight Show", "id": "UC8-Th83bH_thdKZDJCrn88g", "category": "comedy" },
-    { "name": "Saturday Night Live", "id": "UCqFzWxSCi39LnW1JKFR3efg", "category": "comedy" },
-    { "name": "Jimmy Kimmel Live", "id": "UCa6vGFO9ty8v5KZJXQxdhaw", "category": "comedy" },
-    { "name": "The Daily Show", "id": "UCwWhs_6x42TyRM4Wstoq8HA", "category": "comedy" },
-    { "name": "Tasty", "id": "UCJFp8uSYCjXOMnkUyb3CQ3Q", "category": "lifestyle" },
-    { "name": "BuzzFeed Video", "id": "UCpko_-a4wgz2u_DgDgd9fqA", "category": "lifestyle" },
-    { "name": "Good Mythical Morning", "id": "UC4PooiX37Pld1T8J5SYT-SQ", "category": "lifestyle" },
-    { "name": "Channels Television", "id": "UCEXGDNclvmg6RW0vipJYsTQ", "category": "gist" },
-    { "name": "BBC News", "id": "UC16niRr50-MSBwiO3YDb3RA", "category": "gist" },
-    { "name": "Sky News", "id": "UCoMdktPbSTixAyNGwb-UYkQ", "category": "gist" },
-    { "name": "Al Jazeera English", "id": "UCNye-wNBqNL5ZzHSJj3l8Bg", "category": "gist" },
-    { "name": "TED", "id": "UCAuUUnT6oDeKwE6v1NGQxug", "category": "learn" },
-    { "name": "NASA", "id": "UCLA_DiR1FfKNvjuUpBHmylQ", "category": "learn" }
-  ],
-  "sportFeeds": [
-    "https://feeds.bbci.co.uk/sport/rss.xml",
-    "https://www.espn.com/espn/rss/news"
-  ],
-  "reels": { "enabled": true, "title": "Deeprows Reels", "shortsOnly": true },
-  "customVideos": []
-}
+  {
+    "title": "Movie: Disclosure Day (2026)",
+    "url": "https://filemoon.org/en/Z9dzB7EMGk1b/embed",
+    "channel": "Deeprows"
+  }
+]
