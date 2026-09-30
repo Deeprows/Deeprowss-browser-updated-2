@@ -188,6 +188,8 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_main)
 
+        RemoteConfig.init(this)
+
         supportOverlay = SupportOverlay(this) { updateBackCallback() }
 
         onBackPressedDispatcher.addCallback(this, backCallback)
@@ -245,6 +247,8 @@ class MainActivity : AppCompatActivity() {
         scheduleSupportOverlay()
 
         maybePromptDefaultBrowser()
+
+        refreshRemoteConfig()
     }
 
     override fun onDestroy() {
@@ -1629,7 +1633,7 @@ class MainActivity : AppCompatActivity() {
 
         container.removeAllViews()
 
-        val categories = listOf(
+        val builtInCategories = listOf(
 
             HomeCategory(
                 "🤖 AI TOOLS",
@@ -1948,6 +1952,9 @@ class MainActivity : AppCompatActivity() {
                 )
             )
         )
+
+        // Remote list from GitHub wins; built-in list is the fallback.
+        val categories = RemoteConfig.current?.categories ?: builtInCategories
 
         categories.forEach { category ->
 
@@ -4699,9 +4706,88 @@ class MainActivity : AppCompatActivity() {
     }
 
     // "App Update Enquiry" opens a WhatsApp chat with the developer.
+    // =========================================================
+    // REMOTE CONFIG (controlled from remote/config.json on GitHub)
+    // =========================================================
+
+    private fun currentVersionCode(): Long = try {
+        val info = packageManager.getPackageInfo(packageName, 0)
+        if (android.os.Build.VERSION.SDK_INT >= 28) info.longVersionCode
+        else @Suppress("DEPRECATION") info.versionCode.toLong()
+    } catch (_: Exception) {
+        0L
+    }
+
+    private fun openExternal(url: String) {
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        } catch (_: Exception) {
+            toast("Unable to open link")
+        }
+    }
+
+    private fun refreshRemoteConfig() {
+        RemoteConfig.refresh(this) { config ->
+            if (config == null) return@refresh
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                setupDynamicHomepage()
+                loadLatestNews()
+                loadSportNews()
+                showRemoteUpdateDialog(config.update)
+                showRemoteAnnouncement(config.announcement)
+            }
+        }
+    }
+
+    private fun showRemoteUpdateDialog(update: RemoteConfig.Update?) {
+        if (update == null || !update.apkUrl.startsWith("http")) return
+        val current = currentVersionCode()
+        if (update.latestVersionCode <= current) return
+
+        val forced = update.minVersionCode > current
+        val text = buildString {
+            append("Version ${update.latestVersionName} is available.")
+            if (update.changelog.isNotBlank()) append("\n\n${update.changelog}")
+        }
+        val dialog = themedDialog()
+            .setTitle(if (forced) "Update required" else "Update available")
+            .setMessage(text)
+            .setCancelable(!forced)
+            .setPositiveButton("Update") { _, _ -> openExternal(update.apkUrl) }
+        if (!forced) dialog.setNegativeButton("Later", null)
+        dialog.show()
+    }
+
+    private fun showRemoteAnnouncement(a: RemoteConfig.Announcement?) {
+        if (a == null) return
+        // Show each announcement only once per user.
+        if (preferences.getString("last_announcement_id", null) == a.id) return
+        preferences.edit().putString("last_announcement_id", a.id).apply()
+
+        val dialog = themedDialog()
+            .setTitle(a.title)
+            .setMessage(a.message)
+            .setNegativeButton("Close", null)
+        if (a.url != null && a.url.startsWith("http")) {
+            dialog.setPositiveButton("Open") { _, _ -> openExternal(a.url) }
+        }
+        dialog.show()
+    }
+
     private fun setupUpdateEnquiryButton() {
 
         findViewById<View>(R.id.appUpdateButton).setOnClickListener {
+
+            // If GitHub says a newer version exists, go straight to it.
+            val remoteUpdate = RemoteConfig.current?.update
+            if (remoteUpdate != null &&
+                remoteUpdate.apkUrl.startsWith("http") &&
+                remoteUpdate.latestVersionCode > currentVersionCode()
+            ) {
+                openExternal(remoteUpdate.apkUrl)
+                return@setOnClickListener
+            }
 
             val link =
                 "https://wa.me/2348164887683" +
@@ -4733,7 +4819,7 @@ class MainActivity : AppCompatActivity() {
         val comingSoon = {
             Toast.makeText(
                 this,
-                "VPN is coming soon",
+                RemoteConfig.current?.vpnMessage ?: "VPN is coming soon",
                 Toast.LENGTH_SHORT
             ).show()
         }
