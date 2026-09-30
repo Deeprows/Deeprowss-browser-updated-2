@@ -1,0 +1,27 @@
+{
+  "vpn": {
+    "message": "VPN is coming soon"
+  },
+  "announcement": {
+    "id": "welcome-1",
+    "title": "Welcome",
+    "message": "Thanks for using Deeprows Browser!",
+    "url": ""
+  },
+  "update": {
+    "latestVersionCode": 1,
+    "latestVersionName": "0.1.0",
+    "minVersionCode": 1,
+    "apkUrl": "https://github.com/Deeprows/Deeprowss-browser-updated-2/releases/latest",
+    "changelog": ""
+  },
+  "newsFeeds": [
+    "https://feeds.bbci.co.uk/news/rss.xml",
+    "https://www.aljazeera.com/xml/rss/all.xml",
+    "https://www.theguardian.com/world/rss"
+  ],
+  "sportFeeds": [
+    "https://feeds.bbci.co.uk/sport/rss.xml",
+    "https://www.espn.com/espn/rss/news"
+  ]
+}
