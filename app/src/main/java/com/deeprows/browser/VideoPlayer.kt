@@ -34,9 +34,18 @@ class VideoPlayer(private val activity: Activity) {
     private var customView: View? = null
     private var customCallback: WebChromeClient.CustomViewCallback? = null
     private var previousOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+    private var originalOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+    private var forceLandscape = false
 
     @SuppressLint("SetJavaScriptEnabled")
     fun show(video: VideoItem, onOpenOnYouTube: (String) -> Unit) {
+        // Every video in the "deeprows" category opens full screen in landscape.
+        forceLandscape = video.category == "deeprows"
+        originalOrientation = activity.requestedOrientation
+        if (forceLandscape) {
+            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        }
+
         val dialog = Dialog(activity, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
         dialog.window?.apply {
             setBackgroundDrawable(ColorDrawable(Color.BLACK))
@@ -125,6 +134,7 @@ class VideoPlayer(private val activity: Activity) {
 
         dialog.setOnDismissListener {
             hideCustomView(root)
+            activity.requestedOrientation = originalOrientation
             root.removeView(web)
             web.stopLoading()
             web.loadUrl("about:blank")
@@ -142,6 +152,15 @@ class VideoPlayer(private val activity: Activity) {
         )
 
         dialog.show()
+
+        if (forceLandscape) {
+            dialog.window?.let { w ->
+                val controller = androidx.core.view.WindowInsetsControllerCompat(w, w.decorView)
+                controller.systemBarsBehavior =
+                    androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                controller.hide(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+            }
+        }
     }
 
     private fun hideCustomView(root: FrameLayout) {
@@ -160,7 +179,11 @@ class VideoPlayer(private val activity: Activity) {
     ): View {
         val bar = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(14), statusBarHeight() + dp(8), dp(12), dp(22))
+            if (forceLandscape) {
+                setPadding(dp(18), dp(10), dp(18), dp(22))
+            } else {
+                setPadding(dp(14), statusBarHeight() + dp(8), dp(12), dp(22))
+            }
             background = GradientDrawable(
                 GradientDrawable.Orientation.TOP_BOTTOM,
                 intArrayOf(Color.parseColor("#CC000000"), Color.TRANSPARENT)
