@@ -46,6 +46,13 @@ object TrendNotifications {
     private const val WORK_NAME = "deeprows_trend_alerts"
     private const val PREFS = "deeprows_browser"
 
+    // Minimum time between two notifications of the same kind.
+    private fun minGapMinutes(kind: String): Long = when (kind) {
+        "trends" -> 180L
+        "sports" -> 120L
+        else -> 90L
+    }
+
     private class Alert(
         val kind: String,
         val channelId: String,
@@ -108,14 +115,15 @@ object TrendNotifications {
         }
     }
 
-    // Safe to call on every app start: KEEP leaves an already
-    // scheduled job untouched.
+    // Checks every 30 minutes. UPDATE replaces the old 6-hour job on phones
+    // that already have the app; each alert type also has its own minimum gap
+    // (see minGapMinutes) so users are never flooded.
     fun schedule(context: Context) {
 
         val request = PeriodicWorkRequestBuilder<TrendWorker>(
-            6, TimeUnit.HOURS
+            30, TimeUnit.MINUTES
         )
-            .setInitialDelay(30, TimeUnit.MINUTES)
+            .setInitialDelay(5, TimeUnit.MINUTES)
             .setConstraints(
                 Constraints.Builder()
                     .setRequiredNetworkType(NetworkType.CONNECTED)
@@ -126,7 +134,7 @@ object TrendNotifications {
         WorkManager.getInstance(context)
             .enqueueUniquePeriodicWork(
                 WORK_NAME,
-                ExistingPeriodicWorkPolicy.KEEP,
+                ExistingPeriodicWorkPolicy.UPDATE,
                 request
             )
     }
@@ -203,6 +211,14 @@ object TrendNotifications {
     ) {
 
         val signatureKey = "last_signature_${alert.kind}"
+        val timeKey = "last_notified_${alert.kind}"
+
+        // Respect the minimum gap so updates stay useful, not noisy.
+        val lastTime = prefs.getLong(timeKey, 0L)
+        val gapMs = minGapMinutes(alert.kind) * 60_000L
+        if (System.currentTimeMillis() - lastTime < gapMs) {
+            return
+        }
 
         // Skip if the top stories are the same as the last alert.
         val signature = stories.take(3).joinToString("|") { it.title }
@@ -220,8 +236,10 @@ object TrendNotifications {
 
         val title = when (alert.kind) {
             "trends" -> "\uD83D\uDD25 Trending now: ${top.title}"
-            "news" -> "\uD83D\uDCF0 Latest news"
-            else -> "\u26BD Sports news"
+            "news" -> "\uD83D\uDCF0 Latest news" +
+                (top.source.takeIf { it.isNotBlank() }?.let { " \u2022 $it" } ?: "")
+            else -> "\u26BD Sports news" +
+                (top.source.takeIf { it.isNotBlank() }?.let { " \u2022 $it" } ?: "")
         }
 
         val text = when (alert.kind) {
@@ -265,7 +283,10 @@ object TrendNotifications {
                 alert.notificationId,
                 notification
             )
-            prefs.edit().putString(signatureKey, signature).apply()
+            prefs.edit()
+                .putString(signatureKey, signature)
+                .putLong(timeKey, System.currentTimeMillis())
+                .apply()
         } catch (_: SecurityException) {
             // Permission was revoked in the meantime.
         }
