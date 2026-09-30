@@ -309,9 +309,31 @@ class ReelsSection(
             )
             background = GradientDrawable(
                 GradientDrawable.Orientation.TL_BR,
-                intArrayOf(Color.parseColor("#1F2A44"), Color.parseColor("#6A1B9A"))
+                when (video.type) {
+                    "sport" -> intArrayOf(Color.parseColor("#0B5D1E"), Color.parseColor("#1DB954"))
+                    "movie" -> intArrayOf(Color.parseColor("#2B1055"), Color.parseColor("#D7263D"))
+                    else -> intArrayOf(Color.parseColor("#1F2A44"), Color.parseColor("#6A1B9A"))
+                }
             )
         }
+
+        // Fallback picture for cards with no thumbnail: sits behind the image,
+        // so it is covered automatically as soon as a real thumbnail loads.
+        frame.addView(TextView(activity).apply {
+            text = when (video.type) {
+                "sport" -> "\u26BD\nSPORT"
+                "movie" -> "\uD83C\uDFAC\nMOVIE"
+                else -> "\u25B6"
+            }
+            textSize = 26f
+            setTypeface(null, Typeface.BOLD)
+            gravity = Gravity.CENTER
+            setTextColor(Color.parseColor("#66FFFFFF"))
+            layoutParams = FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        })
 
         val image = ImageView(activity).apply {
             scaleType = ImageView.ScaleType.CENTER_CROP
