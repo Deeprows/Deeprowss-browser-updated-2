@@ -204,6 +204,14 @@ class ReelsSection(
     // ---------------------------------------------------------
 
     private fun load() {
+        // Your own videos (config.json -> customVideos) appear straight away,
+        // without waiting for the YouTube channels to download.
+        val mine = VideoRepository.customVideos()
+        if (mine.isNotEmpty()) {
+            allVideos = mine
+            buildChips()
+            renderCards()
+        }
         scope.launch {
             val videos = try {
                 VideoRepository.getVideos()
@@ -233,7 +241,7 @@ class ReelsSection(
                     cornerRadius = dp(16).toFloat()
                     setColor(theme.surface2)
                 }
-                layoutParams = LinearLayout.LayoutParams(dp(216), dp(190)).apply {
+                layoutParams = LinearLayout.LayoutParams(dp(216), dp(222)).apply {
                     setMargins(0, 0, dp(10), 0)
                 }
             }
@@ -297,9 +305,12 @@ class ReelsSection(
         val frame = FrameLayout(activity).apply {
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(122)
+                dp(150)
             )
-            setBackgroundColor(theme.surface2)
+            background = GradientDrawable(
+                GradientDrawable.Orientation.TL_BR,
+                intArrayOf(Color.parseColor("#1F2A44"), Color.parseColor("#6A1B9A"))
+            )
         }
 
         val image = ImageView(activity).apply {
@@ -311,7 +322,20 @@ class ReelsSection(
             )
         }
         frame.addView(image)
-        loadImage(video.thumbnail, image)
+        val embedPage = video.customUrl
+        if (video.thumbnail.isNotBlank()) {
+            loadImage(video.thumbnail, image)
+        } else if (embedPage != null) {
+            // No thumbnail in config.json: use the one the player page provides.
+            scope.launch {
+                val found = try {
+                    VideoRepository.embedThumbnail(embedPage)
+                } catch (_: Exception) {
+                    ""
+                }
+                if (found.isNotBlank()) loadImage(found, image)
+            }
+        }
 
         val scrim = View(activity).apply {
             background = GradientDrawable(
@@ -408,6 +432,12 @@ class ReelsSection(
                     val conn = URL(url).openConnection().apply {
                         connectTimeout = 8000
                         readTimeout = 8000
+                        setRequestProperty(
+                            "User-Agent",
+                            "Mozilla/5.0 (Linux; Android 15; Mobile) AppleWebKit/537.36 " +
+                                "(KHTML, like Gecko) Chrome/153.0.0.0 Mobile Safari/537.36"
+                        )
+                        setRequestProperty("Referer", "https://deeprows.github.io/")
                     }
                     conn.getInputStream().use { BitmapFactory.decodeStream(it) }
                 } catch (_: Exception) {
