@@ -87,6 +87,8 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
     private lateinit var homePage: ScrollView
+    private var lastHomeRefresh = System.currentTimeMillis()
+    private lateinit var swipeRefresh: androidx.swiperefreshlayout.widget.SwipeRefreshLayout
     private lateinit var settingsPage: ScrollView
 
     private lateinit var addressBar: android.widget.EditText
@@ -200,6 +202,11 @@ class MainActivity : AppCompatActivity() {
         homePage =
             findViewById(R.id.homePage)
 
+        swipeRefresh =
+            findViewById(R.id.swipeRefresh)
+
+        setupPullToRefresh()
+
         settingsPage =
             findViewById(R.id.settingsPage)
 
@@ -312,6 +319,17 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         activityResumed = true
         maybeShowSupportOverlay()
+
+        // Coming back to the app after 10+ minutes: refresh news, sports and trends.
+        if (
+            homePage.visibility == View.VISIBLE &&
+            System.currentTimeMillis() - lastHomeRefresh > 10 * 60_000L
+        ) {
+            lastHomeRefresh = System.currentTimeMillis()
+            loadLatestNews()
+            loadSportNews()
+            loadGoogleTrends()
+        }
     }
 
     override fun onPause() {
@@ -2585,6 +2603,8 @@ class MainActivity : AppCompatActivity() {
                     loadingBar.visibility =
                         View.GONE
 
+                    swipeRefresh.isRefreshing = false
+
                     if (
                         url != null &&
                         (
@@ -4163,12 +4183,31 @@ class MainActivity : AppCompatActivity() {
             dp(8)
         )
 
+        // Scrollable list: with many tabs (10, 11, 12 ...) the list scrolls
+        // instead of running off the screen.
+        val tabsScroll = object : ScrollView(this) {
+            override fun onMeasure(widthSpec: Int, heightSpec: Int) {
+                val maxHeight =
+                    (resources.displayMetrics.heightPixels * 0.6f).toInt()
+                super.onMeasure(
+                    widthSpec,
+                    View.MeasureSpec.makeMeasureSpec(
+                        maxHeight,
+                        View.MeasureSpec.AT_MOST
+                    )
+                )
+            }
+        }
+
+        tabsScroll.isVerticalScrollBarEnabled = true
+        tabsScroll.addView(container)
+
         val dialog =
             themedDialog()
                 .setTitle(
                     "Open Tabs (${openTabs.size})"
                 )
-                .setView(container)
+                .setView(tabsScroll)
                 .setNegativeButton(
                     "Close",
                     null
@@ -4277,10 +4316,10 @@ class MainActivity : AppCompatActivity() {
                     18f
 
                 closeButton.setPadding(
-                    16,
-                    8,
-                    16,
-                    8
+                    dp(14),
+                    dp(8),
+                    dp(14),
+                    dp(8)
                 )
 
                 row.addView(
@@ -4374,6 +4413,12 @@ class MainActivity : AppCompatActivity() {
         styleDialogWindow(dialog)
 
         dialog.show()
+
+        // Bring the active tab into view when there are many tabs.
+        tabsScroll.post {
+            val index = openTabs.indexOfFirst { it.id == activeTabId }
+            container.getChildAt(index)?.let { tabsScroll.scrollTo(0, it.top) }
+        }
     }
 
     private fun loadWebsiteLogo(
@@ -4760,16 +4805,66 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun refreshRemoteConfig() {
+    private fun refreshRemoteConfig(
+        showDialogs: Boolean = true,
+        onFinished: (() -> Unit)? = null
+    ) {
         RemoteConfig.refresh(this) { config ->
-            if (config == null) return@refresh
             runOnUiThread {
                 if (isFinishing || isDestroyed) return@runOnUiThread
-                setupDynamicHomepage()
-                loadLatestNews()
-                loadSportNews()
-                showRemoteUpdateDialog(config.update)
-                showRemoteAnnouncement(config.announcement)
+                // Even if the download failed (offline / bad file) we still
+                // rebuild from the last saved copy so the screen is never stale.
+                if (config != null || onFinished != null) {
+                    setupDynamicHomepage()
+                    loadLatestNews()
+                    loadSportNews()
+                    loadGoogleTrends()
+                    lastHomeRefresh = System.currentTimeMillis()
+                }
+                if (config != null && showDialogs) {
+                    showRemoteUpdateDialog(config.update)
+                    showRemoteAnnouncement(config.announcement)
+                }
+                onFinished?.invoke()
+            }
+        }
+    }
+
+    // =========================================================
+    // DRAG (PULL) TO REFRESH
+    // =========================================================
+
+    private fun setupPullToRefresh() {
+
+        swipeRefresh.setColorSchemeColors(getThemeAccentColor())
+        swipeRefresh.setProgressBackgroundColorSchemeColor(getThemeSurfaceColor())
+
+        // Only allow the pull gesture when the visible page is scrolled to the top.
+        swipeRefresh.setOnChildScrollUpCallback { _, _ ->
+            when {
+                settingsPage.visibility == View.VISIBLE -> true
+                webView.visibility == View.VISIBLE -> webView.canScrollVertically(-1)
+                homePage.visibility == View.VISIBLE -> homePage.canScrollVertically(-1)
+                else -> true
+            }
+        }
+
+        swipeRefresh.setOnRefreshListener {
+
+            if (webView.visibility == View.VISIBLE) {
+
+                // Website: reload the current page (onPageFinished stops the spinner).
+                webView.reload()
+                swipeRefresh.postDelayed({ swipeRefresh.isRefreshing = false }, 10_000)
+
+            } else {
+
+                // Home: re-download config.json, then rebuild categories, Reels and news.
+                VideoRepository.invalidate()
+                refreshRemoteConfig(showDialogs = false) {
+                    swipeRefresh.isRefreshing = false
+                }
+                swipeRefresh.postDelayed({ swipeRefresh.isRefreshing = false }, 12_000)
             }
         }
     }
@@ -5696,7 +5791,11 @@ class MainActivity : AppCompatActivity() {
         ).launch {
 
             val trends =
-                newsRepository.getGoogleTrends(null, 10)
+                newsRepository.getGoogleTrends(
+                    CountryProvider.getCountryCode(this@MainActivity)
+                        .ifBlank { null },
+                    10
+                )
 
             if (trends.isEmpty()) {
 
