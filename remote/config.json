@@ -20,8 +20,100 @@
     "https://www.aljazeera.com/xml/rss/all.xml",
     "https://www.theguardian.com/world/rss"
   ],
+  "videoChannels": [
+    {
+      "name": "ESPN",
+      "id": "UCiWLfSweyRNmLpgEHekhoAg",
+      "category": "sports"
+    },
+    {
+      "name": "NBA",
+      "id": "UCWJ2lWNubArHWmf3FIHbfcQ",
+      "category": "sports"
+    },
+    {
+      "name": "Sky Sports Football",
+      "id": "UCNAf1k0yIjyGu3k9BwAg3lg",
+      "category": "sports"
+    },
+    {
+      "name": "Red Bull",
+      "id": "UCblfuW_4rakIf2h6aqANefA",
+      "category": "sports"
+    },
+    {
+      "name": "The Tonight Show",
+      "id": "UC8-Th83bH_thdKZDJCrn88g",
+      "category": "comedy"
+    },
+    {
+      "name": "Saturday Night Live",
+      "id": "UCqFzWxSCi39LnW1JKFR3efg",
+      "category": "comedy"
+    },
+    {
+      "name": "Jimmy Kimmel Live",
+      "id": "UCa6vGFO9ty8v5KZJXQxdhaw",
+      "category": "comedy"
+    },
+    {
+      "name": "The Daily Show",
+      "id": "UCwWhs_6x42TyRM4Wstoq8HA",
+      "category": "comedy"
+    },
+    {
+      "name": "Tasty",
+      "id": "UCJFp8uSYCjXOMnkUyb3CQ3Q",
+      "category": "lifestyle"
+    },
+    {
+      "name": "BuzzFeed Video",
+      "id": "UCpko_-a4wgz2u_DgDgd9fqA",
+      "category": "lifestyle"
+    },
+    {
+      "name": "Good Mythical Morning",
+      "id": "UC4PooiX37Pld1T8J5SYT-SQ",
+      "category": "lifestyle"
+    },
+    {
+      "name": "Channels Television",
+      "id": "UCEXGDNclvmg6RW0vipJYsTQ",
+      "category": "gist"
+    },
+    {
+      "name": "BBC News",
+      "id": "UC16niRr50-MSBwiO3YDb3RA",
+      "category": "gist"
+    },
+    {
+      "name": "Sky News",
+      "id": "UCoMdktPbSTixAyNGwb-UYkQ",
+      "category": "gist"
+    },
+    {
+      "name": "Al Jazeera English",
+      "id": "UCNye-wNBqNL5ZzHSJj3l8Bg",
+      "category": "gist"
+    },
+    {
+      "name": "TED",
+      "id": "UCAuUUnT6oDeKwE6v1NGQxug",
+      "category": "learn"
+    },
+    {
+      "name": "NASA",
+      "id": "UCLA_DiR1FfKNvjuUpBHmylQ",
+      "category": "learn"
+    }
+  ],
   "sportFeeds": [
     "https://feeds.bbci.co.uk/sport/rss.xml",
     "https://www.espn.com/espn/rss/news"
-  ]
+  ],
+  "reels": {
+    "enabled": true,
+    "title": "Deeprows Reels"
+  },
+  "customVideos": []
 }
