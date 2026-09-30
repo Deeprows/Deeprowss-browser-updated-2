@@ -44,7 +44,11 @@ object RemoteConfig {
         val update: Update?,
         val categories: List<HomeCategory>?,
         val newsFeeds: List<String>?,
-        val sportFeeds: List<String>?
+        val sportFeeds: List<String>?,
+        val videoChannels: List<VideoChannel>?,
+        val reelsEnabled: Boolean,
+        val reelsTitle: String?,
+        val customVideos: List<VideoItem>?
     )
 
     @Volatile
@@ -139,7 +143,43 @@ object RemoteConfig {
             update = update,
             categories = categories,
             newsFeeds = stringList(root, "newsFeeds"),
-            sportFeeds = stringList(root, "sportFeeds")
+            sportFeeds = stringList(root, "sportFeeds"),
+            videoChannels = root.optJSONArray("videoChannels")?.let { arr ->
+                (0 until arr.length()).mapNotNull { i ->
+                    val c = arr.optJSONObject(i) ?: return@mapNotNull null
+                    val id = c.optString("id")
+                    if (!id.startsWith("UC")) null
+                    else VideoChannel(
+                        c.optString("name", id),
+                        id,
+                        c.optString("category", "general").ifBlank { "general" }.lowercase()
+                    )
+                }.ifEmpty { null }
+            },
+            reelsEnabled = root.optJSONObject("reels")?.optBoolean("enabled", true) ?: true,
+            reelsTitle = root.optJSONObject("reels")?.optString("title")?.ifBlank { null },
+            customVideos = root.optJSONArray("customVideos")?.let { arr ->
+                (0 until arr.length()).mapNotNull { i ->
+                    val v = arr.optJSONObject(i) ?: return@mapNotNull null
+                    val url = v.optString("url")
+                    val title = v.optString("title")
+                    if (!url.startsWith("https://") || title.isBlank()) return@mapNotNull null
+
+                    val ytId = VideoRepository.youtubeId(url)
+                    VideoItem(
+                        videoId = ytId ?: ("custom-" + url.hashCode()),
+                        title = title,
+                        channel = v.optString("channel", "Deeprows").ifBlank { "Deeprows" },
+                        thumbnail = v.optString("thumbnail").ifBlank {
+                            if (ytId != null) "https://i.ytimg.com/vi/$ytId/hqdefault.jpg" else ""
+                        },
+                        published = v.optString("published"),
+                        category = v.optString("category", "deeprows")
+                            .ifBlank { "deeprows" }.lowercase(),
+                        customUrl = if (ytId == null) url else null
+                    )
+                }.ifEmpty { null }
+            }
         )
     } catch (_: Exception) {
         null
