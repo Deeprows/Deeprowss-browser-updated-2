@@ -59,6 +59,8 @@ class VideoPlayer(private val activity: Activity) {
             settings.allowFileAccess = false
             settings.allowContentAccess = false
             settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+            settings.javaScriptCanOpenWindowsAutomatically = false
+            settings.setSupportMultipleWindows(false)
         }
 
         web.webChromeClient = object : WebChromeClient() {
@@ -129,7 +131,8 @@ class VideoPlayer(private val activity: Activity) {
             web.destroy()
         }
 
-        // The base URL tells YouTube which site is embedding the player.
+        // Every video is shown through its own embedding player, sized to fill the
+        // screen. The base URL tells the host which site is embedding the player.
         web.loadDataWithBaseURL(
             "https://deeprows.github.io/",
             pageFor(video),
@@ -230,14 +233,31 @@ class VideoPlayer(private val activity: Activity) {
                 }
             })
         }
+        if (!video.isYouTube) {
+            bar.addView(TextView(activity).apply {
+                text = "Video not playing? Open in browser \u2197"
+                textSize = 11f
+                setTextColor(Color.parseColor("#FFB3D4FF"))
+                setPadding(0, dp(8), 0, dp(4))
+                isClickable = true
+                setOnClickListener {
+                    dialog.dismiss()
+                    onOpenOnYouTube(video.watchUrl)
+                }
+            })
+        }
         return bar
+    }
+
+    private fun isVideoFile(url: String): Boolean {
+        val path = url.substringBefore('?').lowercase()
+        return path.endsWith(".mp4") || path.endsWith(".webm") ||
+            path.endsWith(".m3u8") || path.endsWith(".ogg")
     }
 
     private fun pageFor(video: VideoItem): String {
         val url = video.embedUrl.replace("\"", "%22")
-        val path = video.embedUrl.substringBefore('?').lowercase()
-        val isFile = path.endsWith(".mp4") || path.endsWith(".webm") ||
-            path.endsWith(".m3u8") || path.endsWith(".ogg")
+        val isFile = isVideoFile(video.embedUrl)
 
         val inner = if (isFile) {
             "<video src=\"$url\" controls autoplay playsinline " +
@@ -251,7 +271,9 @@ class VideoPlayer(private val activity: Activity) {
 
         return "<!DOCTYPE html><html><head>" +
             "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">" +
-            "<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}</style>" +
+            "<style>html,body{margin:0;padding:0;width:100%;height:100%;background:#000;" +
+            "overflow:hidden}iframe,video{position:absolute;top:0;left:0;width:100%;" +
+            "height:100%;border:0;background:#000}</style>" +
             "</head><body>$inner</body></html>"
     }
 
