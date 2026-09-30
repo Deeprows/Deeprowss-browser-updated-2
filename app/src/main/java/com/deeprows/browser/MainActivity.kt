@@ -1956,7 +1956,36 @@ class MainActivity : AppCompatActivity() {
         // Remote list from GitHub wins; built-in list is the fallback.
         val categories = RemoteConfig.current?.categories ?: builtInCategories
 
+        // Deeprows Reels sits directly above the EDUCATION category.
+        val reelsConfig = RemoteConfig.current
+        val reelsView: View? = if (reelsConfig?.reelsEnabled != false) {
+            ReelsSection(
+                this,
+                ReelsTheme(
+                    getThemeTextColor(),
+                    getThemeMutedColor(),
+                    getThemeBorderColor(),
+                    getThemeSurfaceColor(),
+                    getThemeSurface2Color(),
+                    getThemeAccentColor()
+                ),
+                reelsConfig?.reelsTitle ?: "Deeprows Reels"
+            ) { video ->
+                VideoPlayer(this).show(video) { url -> openWebsite(url) }
+            }.build()
+        } else {
+            null
+        }
+        var reelsAdded = false
+
         categories.forEach { category ->
+
+            if (reelsView != null && !reelsAdded &&
+                category.title.uppercase().contains("EDUCATION")
+            ) {
+                container.addView(reelsView)
+                reelsAdded = true
+            }
 
             addMainCategoryHeader(
                 container,
@@ -1976,6 +2005,11 @@ class MainActivity : AppCompatActivity() {
                     categoryIcon("${category.title} ${subCategory.title}")
                 )
             }
+        }
+
+        // No EDUCATION category found (custom list): put Reels at the end.
+        if (reelsView != null && !reelsAdded) {
+            container.addView(reelsView)
         }
 
         // "My Sites" sits directly below the MESSAGING section
