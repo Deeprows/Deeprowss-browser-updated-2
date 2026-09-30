@@ -399,47 +399,75 @@ class NewsRepository {
         limit: Int
     ): List<NewsArticle> = coroutineScope {
 
-        val perFeed = feeds.map { feed ->
+        // Read several items per feed (not just the first 3) so the newest
+        // story of the whole group can be found, whatever order a feed uses.
+        val all = feeds.map { feed ->
             async(Dispatchers.IO) {
                 try {
-                    fetchRssFeed(feed, 3)
+                    fetchRssFeed(feed, 10)
                 } catch (e: Exception) {
                     emptyList<NewsArticle>()
                 }
             }
-        }.awaitAll()
+        }.awaitAll().flatten()
 
+        // Newest first; stories with no readable date go last.
+        val sorted = all
+            .distinctBy { it.title.trim().lowercase() }
+            .sortedByDescending { parseFeedDate(it.pubDate) }
+
+        // No single outlet may fill the whole list.
+        val maxPerSource = maxOf(2, (limit + 1) / 2)
+        val perSource = mutableMapOf<String, Int>()
         val result = mutableListOf<NewsArticle>()
-        val seenTitles = mutableSetOf<String>()
 
-        var index = 0
+        for (article in sorted) {
+            if (result.size >= limit) break
+            val count = perSource.getOrDefault(article.source, 0)
+            if (count >= maxPerSource) continue
+            perSource[article.source] = count + 1
+            result.add(article)
+        }
 
-        while (result.size < limit) {
-
-            var addedAny = false
-
-            for (articles in perFeed) {
-
-                if (index < articles.size && result.size < limit) {
-
-                    val article = articles[index]
-
-                    if (seenTitles.add(article.title.lowercase())) {
-                        result.add(article)
-                    }
-
-                    addedAny = true
-                }
+        // Fewer outlets than expected: fill the remaining slots anyway.
+        if (result.size < limit) {
+            for (article in sorted) {
+                if (result.size >= limit) break
+                if (article !in result) result.add(article)
             }
-
-            if (!addedAny) {
-                break
-            }
-
-            index++
         }
 
         result
+    }
+
+    // Reads RSS (RFC 822) and Atom (ISO 8601) dates. Returns 0 when unreadable.
+    private fun parseFeedDate(text: String): Long {
+        val value = text.trim()
+        if (value.isEmpty()) return 0L
+
+        val patterns = listOf(
+            "EEE, dd MMM yyyy HH:mm:ss zzz",
+            "EEE, dd MMM yyyy HH:mm:ss Z",
+            "EEE, d MMM yyyy HH:mm:ss zzz",
+            "EEE, d MMM yyyy HH:mm:ss Z",
+            "yyyy-MM-dd'T'HH:mm:ssXXX",
+            "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",
+            "yyyy-MM-dd'T'HH:mm:ss'Z'"
+        )
+
+        for (pattern in patterns) {
+            try {
+                val format = java.text.SimpleDateFormat(
+                    pattern,
+                    java.util.Locale.US
+                )
+                format.timeZone = java.util.TimeZone.getTimeZone("UTC")
+                val time = format.parse(value)?.time
+                if (time != null) return time
+            } catch (_: Exception) {
+            }
+        }
+        return 0L
     }
 
     // =========================================================
