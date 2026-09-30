@@ -31,7 +31,7 @@ class NewsRepository {
     // each source in turn) instead of relying on a single source.
     // A feed that is down or blocked is simply skipped.
 
-    private val latestNewsFeeds = listOf(
+    private val defaultNewsFeeds = listOf(
         "https://feeds.bbci.co.uk/news/rss.xml",
         "https://www.aljazeera.com/xml/rss/all.xml",
         "https://www.theguardian.com/world/rss",
@@ -41,13 +41,20 @@ class NewsRepository {
         "https://feeds.skynews.com/feeds/rss/world.xml"
     )
 
-    private val sportNewsFeeds = listOf(
+    private val defaultSportFeeds = listOf(
         "https://feeds.bbci.co.uk/sport/rss.xml",
         "https://www.espn.com/espn/rss/news",
         "https://www.skysports.com/rss/12040",
         "https://www.theguardian.com/sport/rss",
         "https://www.cbssports.com/rss/headlines/"
     )
+
+    // Can be overridden from remote/config.json on GitHub.
+    private val latestNewsFeeds: List<String>
+        get() = RemoteConfig.current?.newsFeeds ?: defaultNewsFeeds
+
+    private val sportNewsFeeds: List<String>
+        get() = RemoteConfig.current?.sportFeeds ?: defaultSportFeeds
 
     // =========================================================
     // GOOGLE TRENDS RSS
