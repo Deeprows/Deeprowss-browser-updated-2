@@ -50,3 +50,11 @@ Put entries in `customVideos` in `remote/config.json`. Users see them next time 
 - `channel` is optional (default "Deeprows"). `thumbnail` is optional for YouTube links (found automatically) but needed for others.
 - Works with: YouTube links (watch, youtu.be, shorts, embed), sites that give an embed/player URL (Vimeo, Dailymotion...), and direct `.mp4` / `.webm` / `.m3u8` files.
 - Best way to host your own videos: upload them to YouTube as "Unlisted" and paste the link.
+
+
+## Troubleshooting config.json
+- The file must be strict JSON: no ``` markdown fences, no trailing commas, and it must end with a closing `}`.
+  If it is broken the app silently keeps the last good copy. Check it at https://jsonlint.com before committing.
+- In the app, drag down on the home page to re-download config.json and rebuild the page.
+- Custom videos from other hosts (Filemoon, Vimeo...) open in the in-app player directly; if a host refuses to play
+  inside a WebView, the player shows an "Open in browser" link.
