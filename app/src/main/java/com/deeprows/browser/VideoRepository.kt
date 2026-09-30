@@ -75,6 +75,78 @@ object VideoRepository {
     @Volatile private var cachedKey = ""
     @Volatile private var cachedAt = 0L
 
+    private val embedThumbs = java.util.concurrent.ConcurrentHashMap<String, String>()
+
+    /**
+     * Finds the thumbnail a player page provides itself (og:image, twitter:image,
+     * poster="..." or a player "image"/"poster" setting). Used for custom videos
+     * that have no "thumbnail" in config.json. Returns "" when none is found.
+     */
+    suspend fun embedThumbnail(pageUrl: String): String =
+        embedThumbs[pageUrl] ?: withContext(Dispatchers.IO) {
+            val found = findEmbedThumbnail(pageUrl)
+            if (found.isNotEmpty()) embedThumbs[pageUrl] = found
+            found
+        }
+
+    private val thumbPatterns = listOf(
+        Regex("<meta[^>]+property=[\"']og:image(?::secure_url)?[\"'][^>]+content=[\"']([^\"']+)[\"']", RegexOption.IGNORE_CASE),
+        Regex("<meta[^>]+content=[\"']([^\"']+)[\"'][^>]+property=[\"']og:image[\"']", RegexOption.IGNORE_CASE),
+        Regex("<meta[^>]+name=[\"']twitter:image[\"'][^>]+content=[\"']([^\"']+)[\"']", RegexOption.IGNORE_CASE),
+        Regex("poster=[\"']([^\"']+)[\"']", RegexOption.IGNORE_CASE),
+        Regex("[\"'](?:image|poster|thumbnail|thumb)[\"']\\s*:\\s*[\"']([^\"']+\\.(?:jpe?g|png|webp)[^\"']*)[\"']", RegexOption.IGNORE_CASE)
+    )
+
+    private fun findEmbedThumbnail(pageUrl: String): String {
+        var conn: HttpURLConnection? = null
+        return try {
+            conn = URL(pageUrl).openConnection() as HttpURLConnection
+            conn.connectTimeout = 10000
+            conn.readTimeout = 10000
+            conn.instanceFollowRedirects = true
+            conn.setRequestProperty(
+                "User-Agent",
+                "Mozilla/5.0 (Linux; Android 15; Mobile) AppleWebKit/537.36 " +
+                    "(KHTML, like Gecko) Chrome/153.0.0.0 Mobile Safari/537.36"
+            )
+            conn.setRequestProperty("Referer", "https://deeprows.github.io/")
+            if (conn.responseCode != 200) return ""
+
+            // The thumbnail is always near the top of the page; 400 KB is plenty.
+            val html = conn.inputStream.bufferedReader().use {
+                val buf = CharArray(400_000)
+                val n = it.read(buf)
+                if (n > 0) String(buf, 0, n) else ""
+            }
+
+            for (pattern in thumbPatterns) {
+                val raw = pattern.find(html)?.groupValues?.get(1) ?: continue
+                val clean = raw.replace("\\/", "/").replace("&amp;", "&").trim()
+                val absolute = when {
+                    clean.startsWith("//") -> "https:$clean"
+                    clean.startsWith("http") -> clean
+                    clean.startsWith("/") -> {
+                        val u = URL(pageUrl)
+                        "${u.protocol}://${u.host}$clean"
+                    }
+                    else -> ""
+                }
+                if (absolute.startsWith("http")) return absolute
+            }
+            ""
+        } catch (_: Exception) {
+            ""
+        } finally {
+            conn?.disconnect()
+        }
+    }
+
+    /** Forget the cached feed so the next load fetches fresh videos (pull to refresh). */
+    fun invalidate() {
+        cached = null
+        cachedAt = 0L
+    }
+
     /** Your own hand-picked videos from config.json ("customVideos"). */
     fun customVideos(): List<VideoItem> = RemoteConfig.current?.customVideos ?: emptyList()
 
