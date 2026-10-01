@@ -25,6 +25,7 @@ data class VideoChannel(val name: String, val id: String, val category: String =
  * [kind] is "dailymotion", "peertube" or "rss".
  *  - dailymotion: [id] = a Dailymotion username, or [channel] = a topic channel such as "sport" or "news"
  *  - peertube:    [host] = the instance (e.g. "tilvids.com"), [id] = optional channel name
+ *  - youtube:     [id] = a YouTube channel id starting with "UC" (used for regional lists)
  *  - rss:         [url] = any https video feed (RSS / Atom / Media RSS with .mp4 or .m3u8 links)
  */
 data class VideoSource(
@@ -49,12 +50,14 @@ data class VideoItem(
     /** Set only for your own non-YouTube videos (Vimeo embed, .mp4 link, etc). */
     val customUrl: String? = null,
     /** "sport" or "movie" (from config.json). Picks the fallback card picture. */
-    val type: String = ""
+    val type: String = "",
+    /** Normal web page of the video, used by "Open in browser" (embed links often say Forbidden). */
+    val pageUrl: String? = null
 ) {
     val isYouTube: Boolean get() = customUrl == null
 
     val watchUrl: String
-        get() = customUrl ?: "https://www.youtube.com/watch?v=$videoId"
+        get() = pageUrl ?: customUrl ?: "https://www.youtube.com/watch?v=$videoId"
 
     /** Official YouTube embedded player (allowed by YouTube's terms), or your own embed URL. */
     val embedUrl: String
@@ -96,8 +99,15 @@ object VideoRepository {
     private val channels: List<VideoChannel>
         get() = RemoteConfig.current?.videoChannels ?: defaultChannels
 
+    /** Two-letter country of the user (SIM / network, then phone language). Set by the Reels section. */
+    @Volatile var userCountry: String = ""
+
+    /** Videos picked for the user's country (config.json -> "regionalVideos"), shown as "Near You". */
+    private val localSources: List<VideoSource>
+        get() = RemoteConfig.current?.regionalVideos?.get(userCountry.uppercase()) ?: emptyList()
+
     private val sources: List<VideoSource>
-        get() = RemoteConfig.current?.videoSources ?: emptyList()
+        get() = (RemoteConfig.current?.videoSources ?: emptyList()) + localSources
 
     @Volatile private var cached: List<VideoItem>? = null
     @Volatile private var cachedKey = ""
@@ -190,11 +200,12 @@ object VideoRepository {
 
     /** Tabs to show: your own videos first, then the channel categories in order. */
     fun categories(): List<String> =
-        (customVideos().map { it.category } + channels.map { it.category } +
-            sources.map { it.category }).distinct()
+        (customVideos().map { it.category } + localSources.map { it.category } +
+            channels.map { it.category } + sources.map { it.category }).distinct()
 
     fun categoryLabel(category: String): String = when (category.lowercase()) {
         "all" -> "\u2728 For You"
+        "local" -> localLabel()
         "deeprows" -> "\u2B50 Deeprows"
         "sports" -> "\u26BD Sports"
         "comedy" -> "\uD83D\uDE02 Comedy"
@@ -206,6 +217,15 @@ object VideoRepository {
         "tech" -> "\uD83D\uDCBB Tech"
         "general" -> "\uD83C\uDFAC Videos"
         else -> category.replaceFirstChar { it.uppercase() }
+    }
+
+    private fun localLabel(): String {
+        val code = userCountry.uppercase()
+        if (code.length != 2) return "\uD83D\uDCCD Near You"
+        val flag = String(Character.toChars(0x1F1E6 + (code[0] - 'A'))) +
+            String(Character.toChars(0x1F1E6 + (code[1] - 'A')))
+        val name = Locale("", code).getDisplayCountry(Locale.ENGLISH)
+        return if (name.isBlank() || name == code) "$flag Near You" else "$flag $name"
     }
 
     /** Mixes categories one by one so "For You" is not dominated by one channel type. */
@@ -244,6 +264,8 @@ object VideoRepository {
                     .awaitAll()
             }
                 .flatten()
+                // Near You wins when the same video is also in a general channel.
+                .sortedByDescending { it.category == "local" }
                 .distinctBy { it.videoId }
                 .sortedByDescending { it.published }
                 .take(limit)
@@ -331,8 +353,9 @@ object VideoRepository {
     // Other video sources (Dailymotion, PeerTube, any video RSS feed)
     // ---------------------------------------------------------
 
-    private fun fetchSource(src: VideoSource, max: Int): List<VideoItem> = try {
+    private suspend fun fetchSource(src: VideoSource, max: Int): List<VideoItem> = try {
         when (src.kind) {
+            "youtube" -> fetchChannel(VideoChannel(src.name, src.id, src.category), max)
             "dailymotion" -> fetchDailymotion(src, max)
             "peertube" -> fetchPeerTube(src, max)
             "rss" -> fetchRss(src, max)
@@ -389,18 +412,36 @@ object VideoRepository {
         return ""
     }
 
-    private fun fetchDailymotion(src: VideoSource, max: Int): List<VideoItem> {
+    /**
+     * Dailymotion only plays a video inside our app when its owner allows embedding on our
+     * domain. Asks Dailymotion's player endpoint first and drops videos it refuses.
+     * If the check itself cannot be read, the video is kept.
+     */
+    private fun dailymotionPlayable(id: String): Boolean {
+        val body = httpGet(
+            "https://www.dailymotion.com/player/metadata/video/$id?embedder=" +
+                java.net.URLEncoder.encode("https://deeprows.github.io/", "UTF-8")
+        ) ?: return true
+        return try {
+            !JSONObject(body).has("error")
+        } catch (_: Exception) {
+            true
+        }
+    }
+
+    private suspend fun fetchDailymotion(src: VideoSource, max: Int): List<VideoItem> {
         val base = when {
             src.id.isNotBlank() -> "https://api.dailymotion.com/user/${src.id}/videos"
             src.channel.isNotBlank() -> "https://api.dailymotion.com/channel/${src.channel}/videos"
             else -> return emptyList()
         }
+        // Ask for extra, because some will be dropped as not embeddable.
         val body = httpGet(
-            "$base?limit=$max&sort=recent&fields=id,title,thumbnail_480_url,created_time," +
+            "$base?limit=${max * 3}&sort=recent&fields=id,title,thumbnail_480_url,created_time," +
                 "owner.screenname,allow_embed"
         ) ?: return emptyList()
         val list = JSONObject(body).optJSONArray("list") ?: return emptyList()
-        return (0 until list.length()).mapNotNull { i ->
+        val candidates = (0 until list.length()).mapNotNull { i ->
             val v = list.optJSONObject(i) ?: return@mapNotNull null
             val id = v.optString("id")
             val title = v.optString("title")
@@ -413,9 +454,15 @@ object VideoRepository {
                 thumbnail = v.optString("thumbnail_480_url"),
                 published = isoFromMillis(v.optLong("created_time") * 1000L),
                 category = src.category,
-                customUrl = "https://www.dailymotion.com/embed/video/$id?autoplay=1"
+                customUrl = "https://geo.dailymotion.com/player.html?video=$id",
+                pageUrl = "https://www.dailymotion.com/video/$id"
             )
         }
+        return coroutineScope {
+            candidates
+                .map { item -> async { item to dailymotionPlayable(item.videoId.removePrefix("dm-")) } }
+                .awaitAll()
+        }.filter { it.second }.map { it.first }.take(max)
     }
 
     private fun fetchPeerTube(src: VideoSource, max: Int): List<VideoItem> {
@@ -443,7 +490,8 @@ object VideoRepository {
                 thumbnail = if (thumbPath.isEmpty()) "" else "https://$host$thumbPath",
                 published = normalizeDate(v.optString("publishedAt").take(19) + "+00:00"),
                 category = src.category,
-                customUrl = "https://$host$embedPath?autoplay=1"
+                customUrl = "https://$host$embedPath?autoplay=1",
+                pageUrl = "https://$host/w/$uuid"
             )
         }
     }
@@ -461,7 +509,7 @@ object VideoRepository {
             return "https://player.vimeo.com/video/${it.groupValues[1]}"
         }
         Regex("dailymotion\\.com/video/([A-Za-z0-9]+)").find(link)?.let {
-            return "https://www.dailymotion.com/embed/video/${it.groupValues[1]}?autoplay=1"
+            return "https://geo.dailymotion.com/player.html?video=${it.groupValues[1]}"
         }
         return null
     }
@@ -545,7 +593,8 @@ object VideoRepository {
                                         videoId = "feed-" + embed.hashCode(), title = title,
                                         channel = src.name, thumbnail = thumb,
                                         published = published, category = src.category,
-                                        customUrl = embed
+                                        customUrl = embed,
+                                        pageUrl = if (videoUrl.isEmpty()) link.ifEmpty { null } else null
                                     )
                                 )
                             }
