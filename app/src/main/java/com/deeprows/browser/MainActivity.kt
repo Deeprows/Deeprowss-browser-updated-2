@@ -246,7 +246,7 @@ class MainActivity : AppCompatActivity() {
         loadGoogleTrends()
         setupTrendsTranslate()
 
-        hideSystemNavigationBar()
+        showSystemNavigationBar()
 
         handleNotificationIntent(intent)
         handleViewIntent(intent)
@@ -318,6 +318,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         activityResumed = true
+        showSystemNavigationBar()
         maybeShowSupportOverlay()
 
         // Coming back to the app after 10+ minutes: refresh news, sports and trends.
@@ -2459,30 +2460,21 @@ class MainActivity : AppCompatActivity() {
     // SYSTEM NAVIGATION BAR
     // =========================================================
 
-    private fun hideSystemNavigationBar() {
-
+    private fun showSystemNavigationBar() {
+        // Phone navigation is now kept visible. The app's own bottom bar
+        // (back / forward / home ...) sits directly above it because the
+        // root layout uses fitsSystemWindows.
         if (
             android.os.Build.VERSION.SDK_INT >=
             android.os.Build.VERSION_CODES.R
         ) {
-
-            window.insetsController?.let { controller ->
-
-                controller.hide(
-                    WindowInsets.Type.navigationBars()
-                )
-
-                controller.systemBarsBehavior =
-                    WindowInsetsController
-                        .BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            }
-
+            window.insetsController?.show(
+                WindowInsets.Type.navigationBars()
+            )
         } else {
-
             @Suppress("DEPRECATION")
             window.decorView.systemUiVisibility =
-                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
-                        View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                View.SYSTEM_UI_FLAG_VISIBLE
         }
     }
 
