@@ -47,6 +47,7 @@ object RemoteConfig {
         val sportFeeds: List<String>?,
         val videoChannels: List<VideoChannel>?,
         val videoSources: List<VideoSource>?,
+        val regionalVideos: Map<String, List<VideoSource>>?,
         val reelsEnabled: Boolean,
         val reelsTitle: String?,
         val customVideos: List<VideoItem>?
@@ -157,27 +158,14 @@ object RemoteConfig {
                     )
                 }.ifEmpty { null }
             },
-            videoSources = root.optJSONArray("videoSources")?.let { arr ->
-                (0 until arr.length()).mapNotNull { i ->
-                    val c = arr.optJSONObject(i) ?: return@mapNotNull null
-                    val kind = c.optString("kind").lowercase()
-                    val src = VideoSource(
-                        kind = kind,
-                        name = c.optString("name", kind).ifBlank { kind },
-                        category = c.optString("category", "general").ifBlank { "general" }.lowercase(),
-                        id = c.optString("id").trim(),
-                        channel = c.optString("channel").trim(),
-                        host = c.optString("host").trim(),
-                        url = c.optString("url").trim()
-                    )
-                    val valid = when (kind) {
-                        "dailymotion" -> src.id.isNotEmpty() || src.channel.isNotEmpty()
-                        "peertube" -> src.host.isNotEmpty()
-                        "rss" -> src.url.startsWith("https://")
-                        else -> false
-                    }
-                    if (valid) src else null
-                }.ifEmpty { null }
+            videoSources = parseSources(root.optJSONArray("videoSources")),
+            regionalVideos = root.optJSONObject("regionalVideos")?.let { obj ->
+                val map = mutableMapOf<String, List<VideoSource>>()
+                obj.keys().forEach { code ->
+                    parseSources(obj.optJSONArray(code), forceCategory = "local")
+                        ?.let { map[code.trim().uppercase()] = it }
+                }
+                map.ifEmpty { null }
             },
             reelsEnabled = root.optJSONObject("reels")?.optBoolean("enabled", true) ?: true,
             reelsTitle = root.optJSONObject("reels")?.optString("title")?.ifBlank { null },
@@ -206,6 +194,34 @@ object RemoteConfig {
         )
     } catch (_: Exception) {
         null
+    }
+
+
+    /** Reads a list of video sources. [forceCategory] puts every entry into one tab (used for "Near You"). */
+    private fun parseSources(arr: org.json.JSONArray?, forceCategory: String? = null): List<VideoSource>? {
+        arr ?: return null
+        return (0 until arr.length()).mapNotNull { i ->
+            val c = arr.optJSONObject(i) ?: return@mapNotNull null
+            val kind = c.optString("kind").lowercase()
+            val src = VideoSource(
+                kind = kind,
+                name = c.optString("name", kind).ifBlank { kind },
+                category = forceCategory
+                    ?: c.optString("category", "general").ifBlank { "general" }.lowercase(),
+                id = c.optString("id").trim(),
+                channel = c.optString("channel").trim(),
+                host = c.optString("host").trim(),
+                url = c.optString("url").trim()
+            )
+            val valid = when (kind) {
+                "youtube" -> src.id.startsWith("UC")
+                "dailymotion" -> src.id.isNotEmpty() || src.channel.isNotEmpty()
+                "peertube" -> src.host.isNotEmpty()
+                "rss" -> src.url.startsWith("https://")
+                else -> false
+            }
+            if (valid) src else null
+        }.ifEmpty { null }
     }
 
     private fun stringList(root: JSONObject, key: String): List<String>? {
