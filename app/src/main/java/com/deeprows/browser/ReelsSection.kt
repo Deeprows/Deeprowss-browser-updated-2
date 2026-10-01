@@ -206,6 +206,7 @@ class ReelsSection(
     // ---------------------------------------------------------
 
     private fun load() {
+        RegionalVideos.load(activity)
         // Your own videos (config.json -> customVideos) appear straight away,
         // without waiting for the YouTube channels to download.
         val mine = VideoRepository.customVideos()
@@ -215,6 +216,7 @@ class ReelsSection(
             renderCards()
         }
         scope.launch {
+            RegionalVideos.load(activity)
             val videos = try {
                 VideoRepository.getVideos()
             } catch (_: Exception) {
