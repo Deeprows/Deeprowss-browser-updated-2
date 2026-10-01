@@ -9,9 +9,9 @@
     "url": ""
   },
   "update": {
-    "latestVersionCode": 2,
-    "latestVersionName": "0.1.3",
-    "minVersionCode": 2,
+    "latestVersionCode": 3,
+    "latestVersionName": "0.1.4",
+    "minVersionCode": 3,
     "apkUrl": "https://github.com/Deeprows/Deeprowss-browser-updated-2/releases/latest",
     "changelog": ""
   },
