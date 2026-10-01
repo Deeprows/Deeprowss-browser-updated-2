@@ -44,13 +44,14 @@ class ReelsSection(
     private val activity: Activity,
     private val theme: ReelsTheme,
     private val title: String,
-    private val onVideoClick: (VideoItem) -> Unit
+    private val onVideoClick: (VideoItem, List<VideoItem>) -> Unit
 ) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     private var allVideos: List<VideoItem> = emptyList()
     private var selected = "all"
+    private var shownList: List<VideoItem> = emptyList()
 
     private lateinit var chipRow: LinearLayout
     private lateinit var cardRow: LinearLayout
@@ -277,6 +278,7 @@ class ReelsSection(
             return
         }
 
+        shownList = list
         list.forEach { cardRow.addView(makeCard(it)) }
         scroller.scrollTo(0, 0)
     }
@@ -298,7 +300,7 @@ class ReelsSection(
             elevation = dp(2).toFloat()
             isClickable = true
             isFocusable = true
-            setOnClickListener { onVideoClick(video) }
+            setOnClickListener { onVideoClick(video, shownList) }
         }
 
         // ----- thumbnail area -----
