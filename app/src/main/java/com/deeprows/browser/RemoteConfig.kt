@@ -46,6 +46,7 @@ object RemoteConfig {
         val newsFeeds: List<String>?,
         val sportFeeds: List<String>?,
         val videoChannels: List<VideoChannel>?,
+        val videoSources: List<VideoSource>?,
         val reelsEnabled: Boolean,
         val reelsTitle: String?,
         val customVideos: List<VideoItem>?
@@ -154,6 +155,28 @@ object RemoteConfig {
                         id,
                         c.optString("category", "general").ifBlank { "general" }.lowercase()
                     )
+                }.ifEmpty { null }
+            },
+            videoSources = root.optJSONArray("videoSources")?.let { arr ->
+                (0 until arr.length()).mapNotNull { i ->
+                    val c = arr.optJSONObject(i) ?: return@mapNotNull null
+                    val kind = c.optString("kind").lowercase()
+                    val src = VideoSource(
+                        kind = kind,
+                        name = c.optString("name", kind).ifBlank { kind },
+                        category = c.optString("category", "general").ifBlank { "general" }.lowercase(),
+                        id = c.optString("id").trim(),
+                        channel = c.optString("channel").trim(),
+                        host = c.optString("host").trim(),
+                        url = c.optString("url").trim()
+                    )
+                    val valid = when (kind) {
+                        "dailymotion" -> src.id.isNotEmpty() || src.channel.isNotEmpty()
+                        "peertube" -> src.host.isNotEmpty()
+                        "rss" -> src.url.startsWith("https://")
+                        else -> false
+                    }
+                    if (valid) src else null
                 }.ifEmpty { null }
             },
             reelsEnabled = root.optJSONObject("reels")?.optBoolean("enabled", true) ?: true,
