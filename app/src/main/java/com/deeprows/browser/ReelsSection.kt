@@ -263,7 +263,8 @@ class ReelsSection(
         cardRow.removeAllViews()
 
         val list = if (selected == "all") {
-            VideoRepository.interleave(allVideos)
+            // "For You" leaves out the Deeprows category; those videos stay in their own tab.
+            VideoRepository.interleave(allVideos.filter { it.category != "deeprows" })
         } else {
             allVideos.filter { it.category == selected }
         }
