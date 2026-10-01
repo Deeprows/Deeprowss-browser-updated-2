@@ -47,7 +47,6 @@ object RemoteConfig {
         val sportFeeds: List<String>?,
         val videoChannels: List<VideoChannel>?,
         val videoSources: List<VideoSource>?,
-        val regionalVideos: Map<String, List<VideoSource>>?,
         val reelsEnabled: Boolean,
         val reelsTitle: String?,
         val customVideos: List<VideoItem>?
@@ -159,14 +158,6 @@ object RemoteConfig {
                 }.ifEmpty { null }
             },
             videoSources = parseSources(root.optJSONArray("videoSources")),
-            regionalVideos = root.optJSONObject("regionalVideos")?.let { obj ->
-                val map = mutableMapOf<String, List<VideoSource>>()
-                obj.keys().forEach { code ->
-                    parseSources(obj.optJSONArray(code), forceCategory = "local")
-                        ?.let { map[code.trim().uppercase()] = it }
-                }
-                map.ifEmpty { null }
-            },
             reelsEnabled = root.optJSONObject("reels")?.optBoolean("enabled", true) ?: true,
             reelsTitle = root.optJSONObject("reels")?.optString("title")?.ifBlank { null },
             customVideos = root.optJSONArray("customVideos")?.let { arr ->
