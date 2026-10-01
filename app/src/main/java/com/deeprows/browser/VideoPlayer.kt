@@ -11,6 +11,8 @@ import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
 import android.text.TextUtils
 import android.view.Gravity
+import android.view.GestureDetector
+import android.view.MotionEvent
 import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
@@ -38,7 +40,19 @@ class VideoPlayer(private val activity: Activity) {
     private var forceLandscape = false
 
     @SuppressLint("SetJavaScriptEnabled")
-    fun show(video: VideoItem, onOpenOnYouTube: (String) -> Unit) {
+    fun show(
+        video: VideoItem,
+        playlist: List<VideoItem> = listOf(video),
+        onOpenOnYouTube: (String) -> Unit
+    ) {
+        // Swipe up = next video, swipe down = previous (same order as the cards).
+        val list = playlist.ifEmpty { listOf(video) }
+        var index = list.indexOfFirst {
+            it.videoId == video.videoId && it.customUrl == video.customUrl
+        }.coerceAtLeast(0)
+        var topBar: View? = null
+        var busy = false
+
         // Every video in the "deeprows" category opens full screen in landscape.
         forceLandscape = video.category == "deeprows"
         originalOrientation = activity.requestedOrientation
@@ -53,7 +67,40 @@ class VideoPlayer(private val activity: Activity) {
             addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
 
-        val root = FrameLayout(activity).apply { setBackgroundColor(Color.BLACK) }
+        var onSwipe: (Int) -> Unit = {}
+
+        val swipeDetector = GestureDetector(
+            activity,
+            object : GestureDetector.SimpleOnGestureListener() {
+                override fun onFling(
+                    e1: MotionEvent?,
+                    e2: MotionEvent,
+                    velocityX: Float,
+                    velocityY: Float
+                ): Boolean {
+                    val start = e1 ?: return false
+                    val dy = e2.y - start.y
+                    val dx = e2.x - start.x
+                    if (
+                        Math.abs(dy) > dp(90) &&
+                        Math.abs(dy) > Math.abs(dx) * 1.5f &&
+                        Math.abs(velocityY) > 700
+                    ) {
+                        onSwipe(if (dy < 0) 1 else -1)
+                    }
+                    return false
+                }
+            }
+        )
+
+        // Watches every touch for an up/down swipe without taking it away from the
+        // player, so taps and the player's own controls keep working.
+        val root = object : FrameLayout(activity) {
+            override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+                swipeDetector.onTouchEvent(ev)
+                return super.dispatchTouchEvent(ev)
+            }
+        }.apply { setBackgroundColor(Color.BLACK) }
 
         val spinner = ProgressBar(activity).apply {
             indeterminateTintList = ColorStateList.valueOf(Color.WHITE)
@@ -116,7 +163,95 @@ class VideoPlayer(private val activity: Activity) {
             )
         )
         root.addView(spinner)
-        root.addView(buildTopBar(video, dialog, onOpenOnYouTube))
+
+        fun makeNavButton(label: String, description: String, topMargin: Int, bottomMargin: Int) =
+            TextView(activity).apply {
+                text = label
+                textSize = 16f
+                gravity = Gravity.CENTER
+                setTextColor(Color.WHITE)
+                contentDescription = description
+                background = GradientDrawable().apply {
+                    shape = GradientDrawable.OVAL
+                    setColor(Color.parseColor("#88000000"))
+                    setStroke(dp(1), Color.parseColor("#88FFFFFF"))
+                }
+                layoutParams = LinearLayout.LayoutParams(dp(38), dp(38)).apply {
+                    setMargins(0, topMargin, 0, bottomMargin)
+                }
+                isClickable = true
+            }
+
+        val navNext = makeNavButton("\u25B2", "Next video", 0, dp(8))
+        val navPrev = makeNavButton("\u25BC", "Previous video", 0, 0)
+
+        root.addView(
+            LinearLayout(activity).apply {
+                orientation = LinearLayout.VERTICAL
+                alpha = 0.75f
+                addView(navNext)
+                addView(navPrev)
+                layoutParams = FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    Gravity.END or Gravity.CENTER_VERTICAL
+                ).apply { setMargins(0, 0, dp(10), 0) }
+            }
+        )
+
+        fun applyMode(v: VideoItem) {
+            forceLandscape = v.category == "deeprows"
+            activity.requestedOrientation =
+                if (forceLandscape) ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                else originalOrientation
+            dialog.window?.let { w ->
+                val controller = androidx.core.view.WindowInsetsControllerCompat(w, w.decorView)
+                controller.systemBarsBehavior =
+                    androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                if (forceLandscape) {
+                    controller.hide(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+                } else {
+                    controller.show(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+                }
+            }
+        }
+
+        fun showVideo(v: VideoItem) {
+            applyMode(v)
+            topBar?.let { root.removeView(it) }
+            val position = if (list.size > 1) "${index + 1}/${list.size}" else ""
+            val bar = buildTopBar(v, dialog, onOpenOnYouTube, position)
+            topBar = bar
+            root.addView(bar)
+            navNext.alpha = if (index < list.size - 1) 1f else 0.3f
+            navPrev.alpha = if (index > 0) 1f else 0.3f
+            spinner.visibility = View.VISIBLE
+            web.loadDataWithBaseURL(
+                "https://deeprows.github.io/",
+                pageFor(v),
+                "text/html",
+                "utf-8",
+                null
+            )
+        }
+
+        fun go(step: Int) {
+            val target = index + step
+            if (busy || target < 0 || target >= list.size) return
+            busy = true
+            index = target
+            val shift = root.height * 0.12f * step
+            web.animate().translationY(-shift).alpha(0f).setDuration(120).withEndAction {
+                showVideo(list[index])
+                web.translationY = shift
+                web.animate().translationY(0f).alpha(1f).setDuration(180)
+                    .withEndAction { busy = false }
+            }
+        }
+
+        onSwipe = { step -> go(step) }
+        navNext.setOnClickListener { go(1) }
+        navPrev.setOnClickListener { go(-1) }
 
         dialog.setContentView(root)
 
@@ -141,26 +276,11 @@ class VideoPlayer(private val activity: Activity) {
             web.destroy()
         }
 
-        // Every video is shown through its own embedding player, sized to fill the
-        // screen. The base URL tells the host which site is embedding the player.
-        web.loadDataWithBaseURL(
-            "https://deeprows.github.io/",
-            pageFor(video),
-            "text/html",
-            "utf-8",
-            null
-        )
-
         dialog.show()
 
-        if (forceLandscape) {
-            dialog.window?.let { w ->
-                val controller = androidx.core.view.WindowInsetsControllerCompat(w, w.decorView)
-                controller.systemBarsBehavior =
-                    androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-                controller.hide(androidx.core.view.WindowInsetsCompat.Type.systemBars())
-            }
-        }
+        // Every video is shown through its own embedding player, sized to fill the
+        // screen. The base URL tells the host which site is embedding the player.
+        showVideo(list[index])
     }
 
     private fun hideCustomView(root: FrameLayout) {
@@ -175,7 +295,8 @@ class VideoPlayer(private val activity: Activity) {
     private fun buildTopBar(
         video: VideoItem,
         dialog: Dialog,
-        onOpenOnYouTube: (String) -> Unit
+        onOpenOnYouTube: (String) -> Unit,
+        position: String = ""
     ): View {
         val bar = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
@@ -213,7 +334,7 @@ class VideoPlayer(private val activity: Activity) {
             ellipsize = TextUtils.TruncateAt.END
         })
         texts.addView(TextView(activity).apply {
-            text = video.channel
+            text = if (position.isEmpty()) video.channel else "${video.channel} \u00B7 $position"
             textSize = 11f
             setTextColor(Color.parseColor("#CCFFFFFF"))
             maxLines = 1
