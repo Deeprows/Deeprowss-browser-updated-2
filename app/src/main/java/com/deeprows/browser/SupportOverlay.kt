@@ -52,7 +52,7 @@ class SupportOverlay(
         const val REPEAT_MS = 24L * 60L * 60L * 1000L
 
         // The support window closes itself after this many seconds.
-        const val AD_WINDOW_SECONDS = 7
+        const val AD_WINDOW_SECONDS = 10
 
         // If the support page has not finished loading after this long,
         // the countdown starts anyway so the window can never get stuck.
@@ -138,7 +138,7 @@ class SupportOverlay(
         val column = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(16), dp(64), dp(16), dp(28))
+            setPadding(dp(16), dp(24), dp(16), dp(20))
         }
 
         // ---------------- Card 1: support message + button ------
@@ -146,7 +146,7 @@ class SupportOverlay(
         val card1 = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_HORIZONTAL
-            setPadding(dp(22), dp(26), dp(22), dp(24))
+            setPadding(dp(18), dp(16), dp(18), dp(16))
             background = rounded(
                 Color.parseColor("#172033"),
                 28,
@@ -157,7 +157,7 @@ class SupportOverlay(
         card1.addView(
             TextView(activity).apply {
                 text = "Kindly Support"
-                textSize = 26f
+                textSize = 22f
                 setTypeface(null, Typeface.BOLD)
                 setTextColor(Color.parseColor("#38BDF8"))
                 gravity = Gravity.CENTER
@@ -167,27 +167,27 @@ class SupportOverlay(
         card1.addView(
             TextView(activity).apply {
                 text = "Help us keep Deeprowss running"
-                textSize = 16f
+                textSize = 14f
                 setTextColor(Color.parseColor("#9AA7BC"))
                 gravity = Gravity.CENTER
-                setPadding(0, dp(10), 0, 0)
+                setPadding(0, dp(4), 0, 0)
             }
         )
 
         card1.addView(
             TextView(activity).apply {
-                text = "Wait time: 15s  \u2022  Trigger every 12h  \u2022  Auto close ON"
+                text = "Wait time: 10s  \u2022  Trigger every 24h  \u2022  Auto close ON"
                 textSize = 11f
                 setTextColor(Color.parseColor("#6B7A90"))
                 gravity = Gravity.CENTER
-                setPadding(0, dp(12), 0, dp(20))
+                setPadding(0, dp(6), 0, dp(12))
             }
         )
 
         val button = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            setPadding(dp(16), dp(16), dp(16), dp(16))
+            setPadding(dp(14), dp(10), dp(14), dp(10))
             background = GradientDrawable(
                 GradientDrawable.Orientation.LEFT_RIGHT,
                 intArrayOf(
@@ -206,7 +206,7 @@ class SupportOverlay(
         button.addView(
             TextView(activity).apply {
                 text = "Click Here"
-                textSize = 26f
+                textSize = 20f
                 setTextColor(Color.WHITE)
                 gravity = Gravity.CENTER
             }
@@ -215,10 +215,10 @@ class SupportOverlay(
         button.addView(
             TextView(activity).apply {
                 text = "Open 1 AD per 24hrs"
-                textSize = 14f
+                textSize = 12f
                 setTextColor(Color.parseColor("#0B1220"))
                 gravity = Gravity.CENTER
-                setPadding(0, dp(6), 0, 0)
+                setPadding(0, dp(2), 0, 0)
             }
         )
 
@@ -242,7 +242,7 @@ class SupportOverlay(
 
         val card2 = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(18), dp(20), dp(18), dp(12))
+            setPadding(dp(14), dp(12), dp(14), dp(6))
             background = rounded(
                 Color.parseColor("#172033"),
                 28,
@@ -253,16 +253,16 @@ class SupportOverlay(
         card2.addView(
             TextView(activity).apply {
                 text = "Instructions \u2013"
-                textSize = 18f
+                textSize = 15f
                 setTextColor(Color.WHITE)
-                setPadding(dp(2), 0, 0, dp(12))
+                setPadding(dp(2), 0, 0, dp(8))
             }
         )
 
         val steps = listOf(
             "Click the button above \u261D\uFE0F",
             "Wait for page to load \uD83E\uDD71",
-            "Stay on the page for 8 seconds \u2764\uFE0F",
+            "Stay on the page for 10 seconds \u2764\uFE0F",
             "It will close automatically \u263A\uFE0F",
             "Enjoy Deeprowss Browser \uD83D\uDCFA"
         )
@@ -272,10 +272,10 @@ class SupportOverlay(
             val row = LinearLayout(activity).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL
-                setPadding(dp(12), dp(12), dp(12), dp(12))
+                setPadding(dp(10), dp(7), dp(10), dp(7))
                 background = rounded(
                     Color.parseColor("#0F1626"),
-                    16,
+                    14,
                     Color.parseColor("#26344D")
                 )
             }
@@ -283,7 +283,7 @@ class SupportOverlay(
             row.addView(
                 TextView(activity).apply {
                     text = "${index + 1}"
-                    textSize = 14f
+                    textSize = 12f
                     setTextColor(Color.parseColor("#2DD4BF"))
                     setTypeface(null, Typeface.BOLD)
                     gravity = Gravity.CENTER
@@ -293,15 +293,15 @@ class SupportOverlay(
                         setStroke(dp(1), Color.parseColor("#2DD4BF"))
                     }
                 },
-                LinearLayout.LayoutParams(dp(32), dp(32))
+                LinearLayout.LayoutParams(dp(24), dp(24))
             )
 
             row.addView(
                 TextView(activity).apply {
                     text = step
-                    textSize = 15f
+                    textSize = 13f
                     setTextColor(Color.WHITE)
-                    setPadding(dp(14), 0, 0, 0)
+                    setPadding(dp(10), 0, 0, 0)
                 },
                 LinearLayout.LayoutParams(
                     0,
@@ -315,7 +315,7 @@ class SupportOverlay(
                 LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT
-                ).apply { setMargins(0, 0, 0, dp(8)) }
+                ).apply { setMargins(0, 0, 0, dp(6)) }
             )
         }
 
@@ -324,7 +324,7 @@ class SupportOverlay(
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
-            ).apply { setMargins(0, dp(14), 0, 0) }
+            ).apply { setMargins(0, dp(10), 0, 0) }
         )
 
         scroll.addView(
