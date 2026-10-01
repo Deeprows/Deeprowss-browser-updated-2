@@ -1988,8 +1988,8 @@ class MainActivity : AppCompatActivity() {
                     getThemeAccentColor()
                 ),
                 reelsConfig?.reelsTitle ?: "Deeprows Reels"
-            ) { video ->
-                VideoPlayer(this).show(video) { url -> openWebsite(url) }
+            ) { video, playlist ->
+                VideoPlayer(this).show(video, playlist) { url -> openWebsite(url) }
             }.build()
         } else {
             null
