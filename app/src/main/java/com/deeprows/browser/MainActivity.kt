@@ -5702,6 +5702,14 @@ class MainActivity : AppCompatActivity() {
     // NEWS
     // =========================================================
 
+    // Keep a handle on each home-section loader. onCreate, onResume and the
+    // remote-config refresh can all start the loaders almost at once; without
+    // cancelling the older run, both runs append their items -> every item
+    // showed up twice.
+    private var latestNewsJob: kotlinx.coroutines.Job? = null
+    private var sportNewsJob: kotlinx.coroutines.Job? = null
+    private var trendsJob: kotlinx.coroutines.Job? = null
+
     private fun loadLatestNews() {
 
         val newsList =
@@ -5709,14 +5717,18 @@ class MainActivity : AppCompatActivity() {
                 R.id.newsList
             )
 
+        latestNewsJob?.cancel()
+
         newsList.removeAllViews()
 
-        kotlinx.coroutines.CoroutineScope(
+        latestNewsJob = kotlinx.coroutines.CoroutineScope(
             kotlinx.coroutines.Dispatchers.Main
         ).launch {
 
             val articles =
                 newsRepository.getLatestNews(5)
+
+            newsList.removeAllViews()
 
             if (articles.isEmpty()) {
                 addEmptyMessage(newsList, "Unable to load news right now")
@@ -5739,14 +5751,18 @@ class MainActivity : AppCompatActivity() {
                 R.id.sportNewsList
             )
 
+        sportNewsJob?.cancel()
+
         sportNewsList.removeAllViews()
 
-        kotlinx.coroutines.CoroutineScope(
+        sportNewsJob = kotlinx.coroutines.CoroutineScope(
             kotlinx.coroutines.Dispatchers.Main
         ).launch {
 
             val articles =
                 newsRepository.getSportNews(5)
+
+            sportNewsList.removeAllViews()
 
             if (articles.isEmpty()) {
                 addEmptyMessage(sportNewsList, "Unable to load sport news right now")
@@ -5769,6 +5785,8 @@ class MainActivity : AppCompatActivity() {
                 R.id.trendsList
             )
 
+        trendsJob?.cancel()
+
         trendsList.removeAllViews()
 
         trendTitleViews.clear()
@@ -5778,7 +5796,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.trendsTranslateButton).text =
             "\uD83C\uDF10 Translate"
 
-        kotlinx.coroutines.CoroutineScope(
+        trendsJob = kotlinx.coroutines.CoroutineScope(
             kotlinx.coroutines.Dispatchers.Main
         ).launch {
 
@@ -5788,6 +5806,9 @@ class MainActivity : AppCompatActivity() {
                         .ifBlank { null },
                     10
                 )
+
+            trendsList.removeAllViews()
+            trendTitleViews.clear()
 
             if (trends.isEmpty()) {
 
