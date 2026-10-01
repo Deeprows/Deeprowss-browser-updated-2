@@ -1975,7 +1975,7 @@ class MainActivity : AppCompatActivity() {
         // Remote list from GitHub wins; built-in list is the fallback.
         val categories = RemoteConfig.current?.categories ?: builtInCategories
 
-        // Deeprows Reels sits directly above the EDUCATION category.
+        // Deeprows Reels sits directly above the AI TOOLS category.
         val reelsConfig = RemoteConfig.current
         val reelsView: View? = if (reelsConfig?.reelsEnabled != false) {
             ReelsSection(
@@ -1997,11 +1997,15 @@ class MainActivity : AppCompatActivity() {
         }
         var reelsAdded = false
 
+        // Anchor = the AI TOOLS category; for a custom remote list without
+        // one, Reels goes above the first category instead.
+        val reelsAnchor = categories.firstOrNull {
+            it.title.uppercase().contains("AI TOOLS")
+        } ?: categories.firstOrNull()
+
         categories.forEach { category ->
 
-            if (reelsView != null && !reelsAdded &&
-                category.title.uppercase().contains("EDUCATION")
-            ) {
+            if (reelsView != null && !reelsAdded && category === reelsAnchor) {
                 container.addView(reelsView)
                 reelsAdded = true
             }
@@ -2026,7 +2030,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // No EDUCATION category found (custom list): put Reels at the end.
+        // Empty category list: still show Reels.
         if (reelsView != null && !reelsAdded) {
             container.addView(reelsView)
         }
