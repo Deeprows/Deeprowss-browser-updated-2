@@ -402,6 +402,9 @@ class VideoPlayer(private val activity: Activity) {
     private fun pageFor(video: VideoItem): String {
         val url = video.embedUrl.replace("\"", "%22")
         val isFile = isVideoFile(video.embedUrl)
+        // Dailymotion checks the full referrer to confirm the embedding site is allowed.
+        val referrer = if (video.embedUrl.contains("dailymotion.com"))
+            "no-referrer-when-downgrade" else "strict-origin-when-cross-origin"
 
         val inner = if (isFile) {
             "<video src=\"$url\" controls autoplay playsinline " +
@@ -410,7 +413,7 @@ class VideoPlayer(private val activity: Activity) {
             "<iframe src=\"$url\" " +
                 "style=\"position:absolute;top:0;left:0;width:100%;height:100%;border:0\" " +
                 "allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" " +
-                "allowfullscreen referrerpolicy=\"strict-origin-when-cross-origin\"></iframe>"
+                "allowfullscreen referrerpolicy=\"$referrer\"></iframe>"
         }
 
         return "<!DOCTYPE html><html><head>" +
