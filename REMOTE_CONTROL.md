@@ -13,6 +13,7 @@
 | `newsFeeds`, `sportFeeds` | RSS sources for News / Sport |
 | `reels` | `enabled` (true/false) shows or hides Deeprows Reels; `title` renames it |
 | `videoChannels` | YouTube channels for Reels: `name`, channel `id` (starts with `UC`) and `category` (sports, comedy, lifestyle, gist, news, music, learn or your own). Each category becomes a tab |
+| `videoSources` | Reels from places other than YouTube: Dailymotion, PeerTube or any video RSS feed (see below) |
 | `customVideos` | Your own videos, shown first in Deeprows Reels (see below) |
 | `homeCategories` | Replaces the whole home grid (see format below) |
 
@@ -51,6 +52,24 @@ Put entries in `customVideos` in `remote/config.json`. Users see them next time 
 - Works with: YouTube links (watch, youtu.be, shorts, embed), sites that give an embed/player URL (Vimeo, Dailymotion...), and direct `.mp4` / `.webm` / `.m3u8` files.
 - Best way to host your own videos: upload them to YouTube as "Unlisted" and paste the link.
 
+
+## Reels from other sources (not only YouTube)
+Add `videoSources` to `remote/config.json`. Each entry becomes cards in the tab named by its `category`
+and is mixed into "For You" with the YouTube channels. Entries that fail to load are skipped silently.
+```json
+"videoSources": [
+  { "kind": "dailymotion", "name": "Dailymotion Sport", "channel": "sport", "category": "sports" },
+  { "kind": "dailymotion", "name": "Some account", "id": "USERNAME", "category": "comedy" },
+  { "kind": "peertube", "name": "TILvids", "host": "tilvids.com", "category": "learn" },
+  { "kind": "peertube", "name": "One channel", "host": "example.org", "id": "channel_name", "category": "music" },
+  { "kind": "rss", "name": "My feed", "url": "https://example.com/videos.xml", "category": "news" }
+]
+```
+- `dailymotion`: use `id` (a username) or `channel` (a topic channel such as `sport`, `news`). Videos that block embedding are skipped.
+- `peertube`: `host` is the instance. Add `id` to follow one channel, or leave it out for the instance's latest videos.
+- `rss`: any `https` RSS / Atom / Media RSS feed. Items are used when they carry a `.mp4` / `.webm` / `.m3u8` file
+  (enclosure or media:content), or link to YouTube, Vimeo or Dailymotion.
+- Not supported: TikTok and Instagram (no public feed to read). Single videos from any site can still go in `customVideos`.
 
 ## Troubleshooting config.json
 - The file must be strict JSON: no ``` markdown fences, no trailing commas, and it must end with a closing `}`.
