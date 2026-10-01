@@ -65,11 +65,29 @@ and is mixed into "For You" with the YouTube channels. Entries that fail to load
   { "kind": "rss", "name": "My feed", "url": "https://example.com/videos.xml", "category": "news" }
 ]
 ```
-- `dailymotion`: use `id` (a username) or `channel` (a topic channel such as `sport`, `news`). Videos that block embedding are skipped.
+- `dailymotion`: use `id` (a username) or `channel` (a topic channel such as `sport`, `news`). Videos whose owner does not allow embedding on our app are skipped (a lot of news and sport publisher content is blocked this way, so some channels may show few or no videos).
 - `peertube`: `host` is the instance. Add `id` to follow one channel, or leave it out for the instance's latest videos.
 - `rss`: any `https` RSS / Atom / Media RSS feed. Items are used when they carry a `.mp4` / `.webm` / `.m3u8` file
   (enclosure or media:content), or link to YouTube, Vimeo or Dailymotion.
 - Not supported: TikTok and Instagram (no public feed to read). Single videos from any site can still go in `customVideos`.
+
+## Videos for the user's location ("Near You")
+Add `regionalVideos` to `remote/config.json`: a list of sources for each two-letter country code (ISO 3166, e.g. `NG`, `EG`, `GB`).
+The app finds the user's country from the SIM / mobile network (no location permission needed), falling back to the phone's
+region setting. Those videos go in a tab named after the country (flag + name), which is placed first, and are
+shown first in "For You". Users in a country with no entry see nothing extra.
+```json
+"regionalVideos": {
+  "NG": [ { "kind": "youtube", "name": "Channels Television", "id": "UCEXGDNclvmg6RW0vipJYsTQ" } ],
+  "EG": [
+    { "kind": "youtube", "name": "My Egyptian channel", "id": "UCxxxxxxxxxxxxxxxxxxxxxx" },
+    { "kind": "peertube", "name": "Local PeerTube", "host": "example.org" }
+  ]
+}
+```
+- Each entry uses the same fields as `videoSources`, and also allows `"kind": "youtube"` with a channel `id` starting with `UC`.
+- The `category` field is ignored here; everything goes into the country tab.
+- The list I included is a starter set (Nigeria, UK, US, Spain, Germany, Italy, France, Qatar). Add your own countries and channels.
 
 ## Troubleshooting config.json
 - The file must be strict JSON: no ``` markdown fences, no trailing commas, and it must end with a closing `}`.
