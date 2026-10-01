@@ -287,6 +287,94 @@
       "category": "learn"
     }
   ],
+  "regionalVideos": {
+    "NG": [
+      {
+        "kind": "youtube",
+        "name": "Channels Television",
+        "id": "UCEXGDNclvmg6RW0vipJYsTQ"
+      }
+    ],
+    "GB": [
+      {
+        "kind": "youtube",
+        "name": "BBC News",
+        "id": "UC16niRr50-MSBwiO3YDb3RA"
+      },
+      {
+        "kind": "youtube",
+        "name": "Sky News",
+        "id": "UCoMdktPbSTixAyNGwb-UYkQ"
+      },
+      {
+        "kind": "youtube",
+        "name": "Sky Sports Football",
+        "id": "UCNAf1k0yIjyGu3k9BwAg3lg"
+      },
+      {
+        "kind": "youtube",
+        "name": "Premier League",
+        "id": "UCG5qGWdu8nIRZqJ_GgDwQ-w"
+      }
+    ],
+    "US": [
+      {
+        "kind": "youtube",
+        "name": "NBA",
+        "id": "UCWJ2lWNubArHWmf3FIHbfcQ"
+      },
+      {
+        "kind": "youtube",
+        "name": "NFL",
+        "id": "UCDVYQ4Zhbm3S2dlz7P1GBDg"
+      },
+      {
+        "kind": "youtube",
+        "name": "ESPN",
+        "id": "UCiWLfSweyRNmLpgEHekhoAg"
+      },
+      {
+        "kind": "youtube",
+        "name": "The Tonight Show",
+        "id": "UC8-Th83bH_thdKZDJCrn88g"
+      }
+    ],
+    "ES": [
+      {
+        "kind": "youtube",
+        "name": "LaLiga",
+        "id": "UCTv-XvfzLX3i4IGWAm4sbmA"
+      }
+    ],
+    "DE": [
+      {
+        "kind": "youtube",
+        "name": "Bundesliga",
+        "id": "UC6UL29enLNe4mqwTfAyeNuw"
+      }
+    ],
+    "IT": [
+      {
+        "kind": "youtube",
+        "name": "Serie A",
+        "id": "UCBJeMCIeLQos7wacox4hmLQ"
+      }
+    ],
+    "FR": [
+      {
+        "kind": "youtube",
+        "name": "Ligue 1",
+        "id": "UC58LMAlfwtGRNR6Xpd4DlSA"
+      }
+    ],
+    "QA": [
+      {
+        "kind": "youtube",
+        "name": "Al Jazeera English",
+        "id": "UCNye-wNBqNL5ZzHSJj3l8Bg"
+      }
+    ]
+  },
   "sportFeeds": [
     "https://feeds.bbci.co.uk/sport/rss.xml",
     "https://feeds.bbci.co.uk/sport/football/rss.xml",
