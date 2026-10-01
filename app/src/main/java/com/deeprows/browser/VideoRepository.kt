@@ -6,7 +6,11 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import org.xmlpull.v1.XmlPullParser
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -15,6 +19,25 @@ import java.net.URL
  * [category] becomes a tab in Deeprows Reels (sports, comedy, lifestyle, gist...).
  */
 data class VideoChannel(val name: String, val id: String, val category: String = "general")
+
+/**
+ * A non-YouTube place to pull reels from (config.json -> "videoSources").
+ * [kind] is "dailymotion", "peertube" or "rss".
+ *  - dailymotion: [id] = a Dailymotion username, or [channel] = a topic channel such as "sport" or "news"
+ *  - peertube:    [host] = the instance (e.g. "tilvids.com"), [id] = optional channel name
+ *  - rss:         [url] = any https video feed (RSS / Atom / Media RSS with .mp4 or .m3u8 links)
+ */
+data class VideoSource(
+    val kind: String,
+    val name: String,
+    val category: String = "general",
+    val id: String = "",
+    val channel: String = "",
+    val host: String = "",
+    val url: String = ""
+) {
+    val key: String get() = "$kind|$id|$channel|$host|$url"
+}
 
 data class VideoItem(
     val videoId: String,
@@ -72,6 +95,9 @@ object VideoRepository {
 
     private val channels: List<VideoChannel>
         get() = RemoteConfig.current?.videoChannels ?: defaultChannels
+
+    private val sources: List<VideoSource>
+        get() = RemoteConfig.current?.videoSources ?: emptyList()
 
     @Volatile private var cached: List<VideoItem>? = null
     @Volatile private var cachedKey = ""
@@ -164,7 +190,8 @@ object VideoRepository {
 
     /** Tabs to show: your own videos first, then the channel categories in order. */
     fun categories(): List<String> =
-        (customVideos().map { it.category } + channels.map { it.category }).distinct()
+        (customVideos().map { it.category } + channels.map { it.category } +
+            sources.map { it.category }).distinct()
 
     fun categoryLabel(category: String): String = when (category.lowercase()) {
         "all" -> "\u2728 For You"
@@ -198,11 +225,12 @@ object VideoRepository {
     /** Newest videos from all channels. Kept for 10 minutes so the home page can rebuild cheaply. */
     suspend fun getVideos(
         perChannel: Int = 4,
-        limit: Int = 80,
+        limit: Int = 120,
         force: Boolean = false
     ): List<VideoItem> {
         val list = channels
-        val key = list.joinToString(",") { it.id }
+        val srcList = sources
+        val key = list.joinToString(",") { it.id } + "#" + srcList.joinToString(",") { it.key }
         val now = System.currentTimeMillis()
         val saved = cached
         if (!force && saved != null && key == cachedKey && now - cachedAt < 10 * 60_000L) {
@@ -211,8 +239,8 @@ object VideoRepository {
 
         val result = withContext(Dispatchers.IO) {
             coroutineScope {
-                list
-                    .map { channel -> async { fetchChannel(channel, perChannel) } }
+                list.map { channel -> async { fetchChannel(channel, perChannel) } }
+                    .plus(srcList.map { src -> async { fetchSource(src, perChannel) } })
                     .awaitAll()
             }
                 .flatten()
@@ -286,6 +314,241 @@ object VideoRepository {
                                 )
                             }
                             inEntry = false
+                        }
+                    }
+                }
+                event = parser.next()
+            }
+            items
+        } catch (_: Exception) {
+            emptyList()
+        } finally {
+            conn?.disconnect()
+        }
+    }
+
+    // ---------------------------------------------------------
+    // Other video sources (Dailymotion, PeerTube, any video RSS feed)
+    // ---------------------------------------------------------
+
+    private fun fetchSource(src: VideoSource, max: Int): List<VideoItem> = try {
+        when (src.kind) {
+            "dailymotion" -> fetchDailymotion(src, max)
+            "peertube" -> fetchPeerTube(src, max)
+            "rss" -> fetchRss(src, max)
+            else -> emptyList()
+        }
+    } catch (_: Exception) {
+        emptyList()
+    }
+
+    private fun httpGet(url: String): String? {
+        var conn: HttpURLConnection? = null
+        return try {
+            conn = URL(url).openConnection() as HttpURLConnection
+            conn.connectTimeout = 8000
+            conn.readTimeout = 8000
+            conn.instanceFollowRedirects = true
+            conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android) DeeprowsBrowser")
+            conn.setRequestProperty("Accept", "application/json, application/xml, text/xml, */*")
+            if (conn.responseCode != 200) null
+            else conn.inputStream.bufferedReader().use { it.readText() }
+        } catch (_: Exception) {
+            null
+        } finally {
+            conn?.disconnect()
+        }
+    }
+
+    private val isoOut = ThreadLocal.withInitial {
+        SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.US).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }
+    }
+
+    private fun isoFromMillis(ms: Long): String = isoOut.get()!!.format(java.util.Date(ms))
+
+    /** Turns ISO or RSS dates into the one format the cards understand. "" if unreadable. */
+    private fun normalizeDate(raw: String): String {
+        val text = raw.trim()
+        if (text.isEmpty()) return ""
+        val patterns = listOf(
+            "yyyy-MM-dd'T'HH:mm:ssXXX",
+            "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",
+            "EEE, dd MMM yyyy HH:mm:ss Z",
+            "EEE, dd MMM yyyy HH:mm:ss zzz"
+        )
+        for (pattern in patterns) {
+            try {
+                val fmt = SimpleDateFormat(pattern, Locale.US)
+                val date = fmt.parse(text) ?: continue
+                return isoFromMillis(date.time)
+            } catch (_: Exception) {
+            }
+        }
+        return ""
+    }
+
+    private fun fetchDailymotion(src: VideoSource, max: Int): List<VideoItem> {
+        val base = when {
+            src.id.isNotBlank() -> "https://api.dailymotion.com/user/${src.id}/videos"
+            src.channel.isNotBlank() -> "https://api.dailymotion.com/channel/${src.channel}/videos"
+            else -> return emptyList()
+        }
+        val body = httpGet(
+            "$base?limit=$max&sort=recent&fields=id,title,thumbnail_480_url,created_time," +
+                "owner.screenname,allow_embed"
+        ) ?: return emptyList()
+        val list = JSONObject(body).optJSONArray("list") ?: return emptyList()
+        return (0 until list.length()).mapNotNull { i ->
+            val v = list.optJSONObject(i) ?: return@mapNotNull null
+            val id = v.optString("id")
+            val title = v.optString("title")
+            if (id.isEmpty() || title.isEmpty()) return@mapNotNull null
+            if (!v.optBoolean("allow_embed", true)) return@mapNotNull null
+            VideoItem(
+                videoId = "dm-$id",
+                title = title,
+                channel = v.optString("owner.screenname").ifEmpty { src.name },
+                thumbnail = v.optString("thumbnail_480_url"),
+                published = isoFromMillis(v.optLong("created_time") * 1000L),
+                category = src.category,
+                customUrl = "https://www.dailymotion.com/embed/video/$id?autoplay=1"
+            )
+        }
+    }
+
+    private fun fetchPeerTube(src: VideoSource, max: Int): List<VideoItem> {
+        val host = src.host.removePrefix("https://").trimEnd('/')
+        if (host.isEmpty()) return emptyList()
+        val path = if (src.id.isNotBlank()) "/api/v1/video-channels/${src.id}/videos"
+        else "/api/v1/videos"
+        val body = httpGet("https://$host$path?count=$max&sort=-publishedAt&nsfw=false")
+            ?: return emptyList()
+        val data = JSONObject(body).optJSONArray("data") ?: return emptyList()
+        return (0 until data.length()).mapNotNull { i ->
+            val v = data.optJSONObject(i) ?: return@mapNotNull null
+            val uuid = v.optString("uuid")
+            val title = v.optString("name")
+            if (uuid.isEmpty() || title.isEmpty() || v.optBoolean("isLive", false)) {
+                return@mapNotNull null
+            }
+            val thumbPath = v.optString("previewPath").ifEmpty { v.optString("thumbnailPath") }
+            val embedPath = v.optString("embedPath").ifEmpty { "/videos/embed/$uuid" }
+            VideoItem(
+                videoId = "pt-$uuid",
+                title = title,
+                channel = v.optJSONObject("channel")?.optString("displayName")
+                    .orEmpty().ifEmpty { src.name },
+                thumbnail = if (thumbPath.isEmpty()) "" else "https://$host$thumbPath",
+                published = normalizeDate(v.optString("publishedAt").take(19) + "+00:00"),
+                category = src.category,
+                customUrl = "https://$host$embedPath?autoplay=1"
+            )
+        }
+    }
+
+    private fun looksLikeVideo(url: String, type: String, medium: String): Boolean {
+        if (!url.startsWith("https://")) return false
+        val clean = url.substringBefore('?').lowercase()
+        return type.startsWith("video/") || medium == "video" ||
+            clean.endsWith(".mp4") || clean.endsWith(".webm") || clean.endsWith(".m3u8")
+    }
+
+    /** Video links in an article page URL that we know how to play. */
+    private fun embedFromPage(link: String): String? {
+        Regex("vimeo\\.com/(?:.*/)?(\\d{6,})").find(link)?.let {
+            return "https://player.vimeo.com/video/${it.groupValues[1]}"
+        }
+        Regex("dailymotion\\.com/video/([A-Za-z0-9]+)").find(link)?.let {
+            return "https://www.dailymotion.com/embed/video/${it.groupValues[1]}?autoplay=1"
+        }
+        return null
+    }
+
+    /** Generic video feed: RSS, Atom or Media RSS with mp4 / m3u8 / YouTube / Vimeo / Dailymotion links. */
+    private fun fetchRss(src: VideoSource, max: Int): List<VideoItem> {
+        if (!src.url.startsWith("https://")) return emptyList()
+        var conn: HttpURLConnection? = null
+        return try {
+            conn = URL(src.url).openConnection() as HttpURLConnection
+            conn.connectTimeout = 8000
+            conn.readTimeout = 8000
+            conn.instanceFollowRedirects = true
+            conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android) DeeprowsBrowser")
+            if (conn.responseCode != 200) return emptyList()
+
+            val parser = Xml.newPullParser()
+            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, true)
+            parser.setInput(conn.inputStream, null)
+
+            val items = mutableListOf<VideoItem>()
+            var inItem = false
+            var title = ""
+            var link = ""
+            var date = ""
+            var videoUrl = ""
+            var thumb = ""
+
+            var event = parser.eventType
+            while (event != XmlPullParser.END_DOCUMENT && items.size < max) {
+                when (event) {
+                    XmlPullParser.START_TAG -> {
+                        val name = parser.name
+                        if (name == "item" || name == "entry") {
+                            inItem = true
+                            title = ""; link = ""; date = ""; videoUrl = ""; thumb = ""
+                        } else if (inItem) when (name) {
+                            "title" -> if (title.isEmpty()) title = parser.nextText().trim()
+                            "link" -> {
+                                val href = parser.getAttributeValue(null, "href")
+                                if (href != null) {
+                                    val rel = parser.getAttributeValue(null, "rel")
+                                    if (link.isEmpty() && (rel == null || rel == "alternate")) link = href
+                                } else if (link.isEmpty()) {
+                                    link = parser.nextText().trim()
+                                }
+                            }
+                            "pubDate", "published", "updated", "date" ->
+                                if (date.isEmpty()) date = parser.nextText().trim()
+                            "enclosure", "content" -> {
+                                val url = parser.getAttributeValue(null, "url") ?: ""
+                                val type = (parser.getAttributeValue(null, "type") ?: "").lowercase()
+                                val medium = (parser.getAttributeValue(null, "medium") ?: "").lowercase()
+                                if (videoUrl.isEmpty() && looksLikeVideo(url, type, medium)) videoUrl = url
+                            }
+                            "thumbnail" -> if (thumb.isEmpty()) {
+                                thumb = parser.getAttributeValue(null, "url") ?: ""
+                            }
+                        }
+                    }
+                    XmlPullParser.END_TAG -> if (parser.name == "item" || parser.name == "entry") {
+                        inItem = false
+                        if (title.isNotEmpty()) {
+                            val published = normalizeDate(date)
+                            val ytId = youtubeId(link)
+                            val embed = when {
+                                videoUrl.isNotEmpty() -> videoUrl
+                                else -> embedFromPage(link)
+                            }
+                            if (ytId != null && videoUrl.isEmpty()) {
+                                items.add(
+                                    VideoItem(
+                                        videoId = ytId, title = title, channel = src.name,
+                                        thumbnail = thumb.ifEmpty { "https://i.ytimg.com/vi/$ytId/hqdefault.jpg" },
+                                        published = published, category = src.category
+                                    )
+                                )
+                            } else if (embed != null) {
+                                items.add(
+                                    VideoItem(
+                                        videoId = "feed-" + embed.hashCode(), title = title,
+                                        channel = src.name, thumbnail = thumb,
+                                        published = published, category = src.category,
+                                        customUrl = embed
+                                    )
+                                )
+                            }
                         }
                     }
                 }
