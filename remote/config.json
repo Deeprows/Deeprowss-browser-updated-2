@@ -267,6 +267,26 @@
       "category": "learn"
     }
   ],
+  "videoSources": [
+    {
+      "kind": "dailymotion",
+      "name": "Dailymotion Sport",
+      "channel": "sport",
+      "category": "sports"
+    },
+    {
+      "kind": "dailymotion",
+      "name": "Dailymotion News",
+      "channel": "news",
+      "category": "gist"
+    },
+    {
+      "kind": "peertube",
+      "name": "TILvids",
+      "host": "tilvids.com",
+      "category": "learn"
+    }
+  ],
   "sportFeeds": [
     "https://feeds.bbci.co.uk/sport/rss.xml",
     "https://feeds.bbci.co.uk/sport/football/rss.xml",
