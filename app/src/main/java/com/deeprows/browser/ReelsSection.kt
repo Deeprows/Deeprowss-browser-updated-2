@@ -242,7 +242,7 @@ class ReelsSection(
                     cornerRadius = dp(16).toFloat()
                     setColor(theme.surface2)
                 }
-                layoutParams = LinearLayout.LayoutParams(dp(216), dp(222)).apply {
+                layoutParams = LinearLayout.LayoutParams(dp(216), dp(292)).apply {
                     setMargins(0, 0, dp(10), 0)
                 }
             }
@@ -308,7 +308,7 @@ class ReelsSection(
         val frame = FrameLayout(activity).apply {
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                dp(150)
+                dp(220)
             )
             background = GradientDrawable(
                 GradientDrawable.Orientation.TL_BR,
@@ -414,7 +414,7 @@ class ReelsSection(
         // ----- text area -----
         val body = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(10), dp(8), dp(10), dp(10))
+            setPadding(dp(8), dp(4), dp(8), dp(5))
         }
 
         body.addView(TextView(activity).apply {
@@ -434,7 +434,7 @@ class ReelsSection(
             setTextColor(theme.muted)
             maxLines = 1
             ellipsize = TextUtils.TruncateAt.END
-            setPadding(0, dp(4), 0, 0)
+            setPadding(0, dp(2), 0, 0)
         })
 
         card.addView(body)
