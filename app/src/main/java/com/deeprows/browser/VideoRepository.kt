@@ -104,7 +104,7 @@ object VideoRepository {
 
     /** Videos picked for the user's country (config.json -> "regionalVideos"), shown as "Near You". */
     private val localSources: List<VideoSource>
-        get() = RemoteConfig.current?.regionalVideos?.get(userCountry.uppercase()) ?: emptyList()
+        get() = RegionalVideos.forCountry(userCountry)
 
     private val sources: List<VideoSource>
         get() = (RemoteConfig.current?.videoSources ?: emptyList()) + localSources
