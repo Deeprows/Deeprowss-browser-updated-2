@@ -102,6 +102,7 @@ class ReelsSection(
         scroller.addView(cardRow)
         root.addView(scroller)
 
+        VideoRepository.userCountry = CountryProvider.getCountryCode(activity)
         showSkeleton()
         load()
         return root
