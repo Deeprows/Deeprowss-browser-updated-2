@@ -1311,7 +1311,19 @@ class NewsRepository {
                                 // ONLY ADD REAL NEWS ARTICLES
                                 // -------------------------------------------------
 
+                                // Different trends can point to the same news
+                                // story - show each story only once.
+                                val isDuplicate =
+                                    articles.any {
+                                        it.link == finalUrl ||
+                                        it.title.equals(
+                                            cleanText(finalTitle),
+                                            ignoreCase = true
+                                        )
+                                    }
+
                                 if (
+                                    !isDuplicate &&
                                     finalTitle.isNotBlank() &&
                                     finalUrl.isNotBlank() &&
                                     isValidUrl(
