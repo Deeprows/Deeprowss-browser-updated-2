@@ -8,6 +8,103 @@
     android:background="#F6F7F9"
     android:fitsSystemWindows="true">
 
+    <!-- WEB PAGE TOP BAR (shown only while a website is open) -->
+
+    <LinearLayout
+        android:id="@+id/webTopBar"
+        android:layout_width="match_parent"
+        android:layout_height="58dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="6dp"
+        android:paddingEnd="4dp"
+        android:background="#101116"
+        android:visibility="gone">
+
+        <ImageButton
+            android:id="@+id/webHomeButton"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_browser_home"
+            android:tint="#FFFFFF"
+            android:padding="10dp"
+            android:contentDescription="Home" />
+
+        <LinearLayout
+            android:id="@+id/webUrlPill"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:background="@drawable/bg_url_pill"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:id="@+id/webSiteInfoIcon"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_browser_tune"
+                android:tint="#FFFFFF"
+                android:contentDescription="Site info" />
+
+            <TextView
+                android:id="@+id/webDomainText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="10dp"
+                android:singleLine="true"
+                android:ellipsize="end"
+                android:textColor="#FFFFFF"
+                android:textSize="17sp" />
+
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/webNewTabButton"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_browser_add"
+            android:tint="#FFFFFF"
+            android:padding="10dp"
+            android:contentDescription="New tab" />
+
+        <TextView
+            android:id="@+id/webTabsCount"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:gravity="center"
+            android:text="1"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:background="@drawable/bg_tab_count"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="Open tabs" />
+
+        <ImageButton
+            android:id="@+id/webMenuButton"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_browser_more_vert"
+            android:tint="#FFFFFF"
+            android:padding="10dp"
+            android:contentDescription="Menu" />
+
+    </LinearLayout>
+
     <ProgressBar
         android:id="@+id/loadingBar"
         style="?android:attr/progressBarStyleHorizontal"
