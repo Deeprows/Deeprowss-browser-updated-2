@@ -138,16 +138,65 @@ class MainActivity : AppCompatActivity() {
     private var findInput: android.widget.EditText? = null
     private var findCount: TextView? = null
 
-    // Back button closes the support overlay / find bar first
+    // Remembers whether Settings was opened from a web page, so Back
+    // returns to that page instead of the home page.
+    private var settingsFromWeb = false
+
+    // Time of the last Back press on the home page (double-press to exit)
+    private var lastBackPressTime = 0L
+
+    // Back button follows the app navigation:
+    // overlay -> find bar -> settings -> web page history -> home page,
+    // and only exits the app with a double press on the home page.
     private val backCallback =
-        object : androidx.activity.OnBackPressedCallback(false) {
+        object : androidx.activity.OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (!supportOverlay.handleBack()) {
-                    if (findBar?.visibility == View.VISIBLE) {
-                        hideFindBar()
-                    }
+
+                if (supportOverlay.handleBack()) {
+                    updateBackCallback()
+                    return
                 }
-                updateBackCallback()
+
+                if (findBar?.visibility == View.VISIBLE) {
+                    hideFindBar()
+                    updateBackCallback()
+                    return
+                }
+
+                if (settingsPage.visibility == View.VISIBLE) {
+                    if (settingsFromWeb && !webView.url.isNullOrBlank()) {
+                        settingsPage.visibility = View.GONE
+                        homePage.visibility = View.GONE
+                        webView.visibility = View.VISIBLE
+                    } else {
+                        showHomePage()
+                    }
+                    settingsFromWeb = false
+                    return
+                }
+
+                if (webView.visibility == View.VISIBLE) {
+                    if (webView.canGoBack()) {
+                        webView.goBack()
+                    } else {
+                        showHomePage()
+                    }
+                    return
+                }
+
+                // Home page: press Back twice to exit
+                val now = System.currentTimeMillis()
+
+                if (now - lastBackPressTime < 2000L) {
+                    finish()
+                } else {
+                    lastBackPressTime = now
+                    Toast.makeText(
+                        this@MainActivity,
+                        "Press back again to exit",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
         }
 
@@ -228,6 +277,7 @@ class MainActivity : AppCompatActivity() {
         setupWebView()
         setupDownloads()
         setupControls()
+        setupWebTopBar()
         setupDynamicHomepage()
         setupSettings()
         setupNewSettings()
@@ -310,9 +360,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateBackCallback() {
 
-        backCallback.isEnabled =
-            (::supportOverlay.isInitialized && supportOverlay.isActive()) ||
-                findBar?.visibility == View.VISIBLE
+        // Always enabled: Back is handled by the app navigation.
+        backCallback.isEnabled = true
     }
 
     override fun onResume() {
@@ -2587,6 +2636,8 @@ class MainActivity : AppCompatActivity() {
 
                         addressBar.setText(url)
 
+                        updateWebTopBarUrl(url)
+
                         saveHistory(url)
                     }
                 }
@@ -2610,6 +2661,7 @@ class MainActivity : AppCompatActivity() {
                     ) {
 
                         addressBar.setText(url)
+                        updateWebTopBarUrl(url)
                         // Update active tab information
                         val activeTab =
                             openTabs.find {
@@ -5210,6 +5262,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun showSettings() {
 
+        settingsFromWeb = webView.visibility == View.VISIBLE
+
         hideFindBar()
 
         // Re-apply the theme so every settings label is readable
@@ -5287,6 +5341,8 @@ class MainActivity : AppCompatActivity() {
 
         updateTabsCount()
 
+        updateWebTopBarUrl(url)
+
         loadUrlInWebView(
             url
         )
@@ -5302,6 +5358,164 @@ class MainActivity : AppCompatActivity() {
             R.id.pagesCount
         ).text =
             openTabs.size.toString()
+
+        findViewById<android.widget.TextView>(
+            R.id.webTabsCount
+        ).text =
+            openTabs.size.toString()
+    }
+
+    // =========================================================
+    // WEB PAGE TOP BAR (Chrome-style address bar)
+    // =========================================================
+
+    private fun setupWebTopBar() {
+
+        findViewById<View>(R.id.webHomeButton).setOnClickListener {
+            showHomePage()
+        }
+
+        // New tab: go to the home page where a site or search can be chosen
+        findViewById<View>(R.id.webNewTabButton).setOnClickListener {
+            showHomePage()
+            addressBar.setText("")
+            addressBar.requestFocus()
+        }
+
+        findViewById<View>(R.id.webTabsCount).setOnClickListener {
+            showOpenTabs()
+        }
+
+        findViewById<View>(R.id.webMenuButton).setOnClickListener {
+            showSettings()
+        }
+
+        findViewById<View>(R.id.webUrlPill).setOnClickListener {
+            showEditUrlDialog()
+        }
+
+        // The bar follows the web view: it is visible whenever a website
+        // is showing and hidden on the home page and in settings, no matter
+        // which code path switched the screen.
+        findViewById<View>(android.R.id.content)
+            .viewTreeObserver
+            .addOnGlobalLayoutListener { syncWebTopBar() }
+
+        syncWebTopBar()
+        updateTabsCount()
+    }
+
+    private fun syncWebTopBar() {
+
+        val bar = findViewById<View>(R.id.webTopBar) ?: return
+
+        val show = webView.visibility == View.VISIBLE
+
+        val target = if (show) View.VISIBLE else View.GONE
+
+        if (bar.visibility != target) {
+            bar.visibility = target
+        }
+
+        if (show) {
+            webView.url?.let { updateWebTopBarUrl(it) }
+        }
+    }
+
+    private fun updateWebTopBarUrl(url: String) {
+
+        if (url.isBlank() || url == "about:blank") {
+            return
+        }
+
+        val host =
+            try {
+                android.net.Uri.parse(url).host
+            } catch (e: Exception) {
+                null
+            }
+
+        val label =
+            host
+                ?.removePrefix("www.")
+                ?.ifBlank { null }
+                ?: url
+
+        val domainText = findViewById<TextView>(R.id.webDomainText)
+
+        if (domainText.text.toString() != label) {
+            domainText.text = label
+        }
+    }
+
+    // Tap the domain to type a new address or search for the current tab.
+    private fun showEditUrlDialog() {
+
+        val input = android.widget.EditText(this).apply {
+            setText(webView.url ?: "")
+            setSingleLine(true)
+            setSelectAllOnFocus(true)
+            imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_GO
+            inputType =
+                android.text.InputType.TYPE_CLASS_TEXT or
+                    android.text.InputType.TYPE_TEXT_VARIATION_URI
+            setTextColor(getThemeTextColor())
+        }
+
+        val holder = android.widget.FrameLayout(this).apply {
+            setPadding(dp(20), dp(8), dp(20), 0)
+            addView(input)
+        }
+
+        fun go(raw: String) {
+
+            val text = raw.trim()
+
+            if (text.isBlank()) {
+                return
+            }
+
+            val url =
+                when {
+                    text.startsWith("http://") ||
+                        text.startsWith("https://") -> text
+
+                    text.contains(".") && !text.contains(" ") ->
+                        "https://$text"
+
+                    else -> searchUrlFor(text)
+                }
+
+            openTabs.find { it.id == activeTabId }?.url = url
+
+            updateWebTopBarUrl(url)
+
+            loadUrlInWebView(url)
+        }
+
+        val dialog =
+            themedDialog()
+                .setTitle("Search or enter address")
+                .setView(holder)
+                .setPositiveButton("Go") { _, _ ->
+                    go(input.text.toString())
+                }
+                .setNegativeButton("Cancel", null)
+                .create()
+
+        input.setOnEditorActionListener { _, _, _ ->
+            go(input.text.toString())
+            dialog.dismiss()
+            true
+        }
+
+        dialog.window?.setSoftInputMode(
+            android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE
+        )
+
+        dialog.show()
+
+        input.requestFocus()
     }
 
     // =========================================================
@@ -6429,6 +6643,30 @@ class MainActivity : AppCompatActivity() {
             }
         }
         tintBottomBar(bottomBar)
+
+        // Web page top bar follows the theme
+        findViewById<View>(R.id.webTopBar).setBackgroundColor(backgroundColor)
+        findViewById<View>(R.id.webUrlPill).background =
+            GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = dp(24).toFloat()
+                setColor(surface2Color)
+            }
+        findViewById<ImageView>(R.id.webHomeButton).setColorFilter(textColor)
+        findViewById<ImageView>(R.id.webSiteInfoIcon).setColorFilter(textColor)
+        findViewById<ImageView>(R.id.webNewTabButton).setColorFilter(textColor)
+        findViewById<ImageView>(R.id.webMenuButton).setColorFilter(textColor)
+        findViewById<TextView>(R.id.webDomainText).setTextColor(textColor)
+        findViewById<TextView>(R.id.webTabsCount).apply {
+            setTextColor(textColor)
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = dp(7).toFloat()
+                setColor(Color.TRANSPARENT)
+                setStroke(dp(2), textColor)
+            }
+        }
+
         findViewById<TextView>(R.id.pagesCount).setTextColor(Color.WHITE)
         findViewById<ImageView>(R.id.homeButton).setColorFilter(accentColor)
         (findViewById<ImageView>(R.id.homeButton).parent as? ViewGroup)?.let { parent ->
